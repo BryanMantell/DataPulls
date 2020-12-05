@@ -1,0 +1,326 @@
+---
+title: "Table Means for APT, AKL, and ES Puppet"
+author: "Bryan"
+date: "10/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# install Packages
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(eeptools)
+```
+
+```{r Imports}
+# Empty Global Environment
+rm(list = ls())
+
+APT <- read.csv("APT.csv")
+AKL  <- read.csv("AKL.csv")
+ES_Puppet  <- read.csv("ES_Puppet.csv")
+UO_MasterList <- read.csv("UO_MasterList.csv")
+UPMC_MasterList <- read.csv("UPMC_MasterList.csv")
+
+```
+
+```{r Mastlist}
+# Filter UO Master List by Group assignment (New N = 85)
+UO_MasterList <- filter(UO_MasterList, Group_Assignment == "Assigned Group 1 (DBT)" |
+                   Group_Assignment == "Assigned Group 2 (FSU)" |
+                   Group_Assignment == "Assigned Group 3 (HC)")
+
+# Filter Master List by Eligibility Status (New N = 84)
+UO_MasterList <- filter(UO_MasterList, Eligibility_Status == "enrolled")
+
+UO_MasterList <- select(UO_MasterList, FamID)
+
+write.csv(UO_MasterList, "UO_MasterList.csv")
+# UPMC's Master List is already filtered but recoding is needed so that the group assignment matches ours
+UPMC_MasterList[UPMC_MasterList == "DBT"] <- "Assigned Group 1 (DBT)"; 
+UPMC_MasterList[UPMC_MasterList == "NO DBT"] <- "Assigned Group 2 (FSU)";
+UPMC_MasterList[UPMC_MasterList == "Healthy"] <- "Assigned Group 3 (HC)"
+
+UPMC_MasterList <- select(UPMC_MasterList, FamID)
+
+MasterList <- rbind(UO_MasterList, UPMC_MasterList)
+
+rm(UO_MasterList, UPMC_MasterList)
+```
+
+```{r APT}
+APT <- select(APT, FamID = fam_id, TimePoint = redcap_event_name, TotalScore = auto_score)
+
+#### Process APT All Means ####
+# Time 1 Processing
+APT_T1 <- filter(APT, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+APT_T1 <- merge(MasterList, APT_T1, by = "FamID", all.x = TRUE)
+APT_T1 <- na.omit(APT_T1)
+
+APT_T1_Mean <- mean(APT_T1$TotalScore)
+APT_T1_SD <- sd(APT_T1$TotalScore)
+
+# Time 2 Processing
+APT_T2 <- filter(APT, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+APT_T2 <- merge(MasterList, APT_T2, by = "FamID", all.x = TRUE)
+APT_T2 <- na.omit(APT_T2)
+
+APT_T2_Mean <- mean(APT_T2$TotalScore)
+APT_T2_SD <- sd(APT_T2$TotalScore)
+
+# Time 3 Processing
+APT_T3 <- filter(APT, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+APT_T3 <- merge(MasterList, APT_T3, by = "FamID", all.x = TRUE)
+APT_T3 <- na.omit(APT_T3)
+
+APT_T3_Mean <- mean(APT_T3$TotalScore)
+APT_T3_SD <- sd(APT_T3$TotalScore)
+
+# Time 4 Processing
+APT_T4 <- filter(APT, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+APT_T4 <- merge(MasterList, APT_T4, by = "FamID", all.x = TRUE)
+APT_T4 <- na.omit(APT_T4)
+
+APT_T4_Mean <- mean(APT_T4$TotalScore)
+APT_T4_SD <- sd(APT_T4$TotalScore)
+
+#### Process APT Finished T4 Means ####
+# Pool IDs that made it through everytime point
+APT_finT4_MasterList <- merge(APT_T1, APT_T4, by = "FamID")
+APT_finT4_MasterList <- select(APT_finT4_MasterList, FamID)
+
+rm(APT_T1, APT_T2, APT_T3, APT_T4)
+# Time 1 Processing
+APT_T1_finT4 <- filter(APT, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+APT_T1_finT4 <- merge(APT_finT4_MasterList, APT_T1_finT4, by = "FamID", all.x = TRUE)
+APT_T1_finT4 <- na.omit(APT_T1_finT4)
+
+APT_T1_Mean_finT4 <- mean(APT_T1_finT4$TotalScore)
+APT_T1_SD_finT4 <- sd(APT_T1_finT4$TotalScore)
+
+# Time 2 Processing
+APT_T2_finT4 <- filter(APT, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+APT_T2_finT4 <- merge(APT_finT4_MasterList, APT_T2_finT4, by = "FamID", all.x = TRUE)
+APT_T2_finT4 <- na.omit(APT_T2_finT4)
+
+APT_T2_Mean_finT4 <- mean(APT_T2_finT4$TotalScore)
+APT_T2_SD_finT4 <- sd(APT_T2_finT4$TotalScore)
+
+# Time 3 Processing
+APT_T3_finT4 <- filter(APT, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+APT_T3_finT4 <- merge(APT_finT4_MasterList, APT_T3_finT4, by = "FamID", all.x = TRUE)
+APT_T3_finT4 <- na.omit(APT_T3_finT4)
+
+APT_T3_Mean_finT4 <- mean(APT_T3_finT4$TotalScore)
+APT_T3_SD_finT4 <- sd(APT_T3_finT4$TotalScore)
+
+# Time 4 Processing
+APT_T4_finT4 <- filter(APT, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+APT_T4_finT4 <- merge(APT_finT4_MasterList, APT_T4_finT4, by = "FamID", all.x = TRUE)
+APT_T4_finT4 <- na.omit(APT_T4_finT4)
+
+APT_T4_Mean_finT4 <- mean(APT_T4_finT4$TotalScore)
+APT_T4_SD_finT4 <- sd(APT_T4_finT4$TotalScore)
+
+rm(APT_finT4_MasterList, APT_T1_finT4, APT_T2_finT4, APT_T3_finT4, APT_T4_finT4)
+```
+
+```{r AKL}
+AKL <- select(AKL, FamID = fam_id, TimePoint = redcap_event_name, TotalScore = child_point_total)
+
+#### Process AKL All Means ####
+# Time 1 Processing
+AKL_T1 <- filter(AKL, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+AKL_T1 <- merge(MasterList, AKL_T1, by = "FamID", all.x = TRUE)
+AKL_T1 <- na.omit(AKL_T1)
+
+AKL_T1_Mean <- mean(AKL_T1$TotalScore)
+AKL_T1_SD <- sd(AKL_T1$TotalScore)
+
+# Time 2 Processing
+AKL_T2 <- filter(AKL, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+AKL_T2 <- merge(MasterList, AKL_T2, by = "FamID", all.x = TRUE)
+AKL_T2 <- na.omit(AKL_T2)
+
+AKL_T2_Mean <- mean(AKL_T2$TotalScore)
+AKL_T2_SD <- sd(AKL_T2$TotalScore)
+
+# Time 3 Processing
+AKL_T3 <- filter(AKL, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+AKL_T3 <- merge(MasterList, AKL_T3, by = "FamID", all.x = TRUE)
+AKL_T3 <- na.omit(AKL_T3)
+
+AKL_T3_Mean <- mean(AKL_T3$TotalScore)
+AKL_T3_SD <- sd(AKL_T3$TotalScore)
+
+# Time 4 Processing
+AKL_T4 <- filter(AKL, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+AKL_T4 <- merge(MasterList, AKL_T4, by = "FamID", all.x = TRUE)
+AKL_T4 <- na.omit(AKL_T4)
+
+AKL_T4_Mean <- mean(AKL_T4$TotalScore)
+AKL_T4_SD <- sd(AKL_T4$TotalScore)
+
+#### Process AKL Finished T4 Means ####
+# Pool IDs that made it through every time point
+AKL_finT4_MasterList <- merge(AKL_T1, AKL_T4, by = "FamID")
+AKL_finT4_MasterList <- select(AKL_finT4_MasterList, FamID)
+
+rm(AKL_T1, AKL_T2, AKL_T3, AKL_T4)
+# Time 1 Processing
+AKL_T1_finT4 <- filter(AKL, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+AKL_T1_finT4 <- merge(AKL_finT4_MasterList, AKL_T1_finT4, by = "FamID", all.x = TRUE)
+AKL_T1_finT4 <- na.omit(AKL_T1_finT4)
+
+AKL_T1_Mean_finT4 <- mean(AKL_T1_finT4$TotalScore)
+AKL_T1_SD_finT4 <- sd(AKL_T1_finT4$TotalScore)
+
+# Time 2 Processing
+AKL_T2_finT4 <- filter(AKL, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+AKL_T2_finT4 <- merge(AKL_finT4_MasterList, AKL_T2_finT4, by = "FamID", all.x = TRUE)
+AKL_T2_finT4 <- na.omit(AKL_T2_finT4)
+
+AKL_T2_Mean_finT4 <- mean(AKL_T2_finT4$TotalScore)
+AKL_T2_SD_finT4 <- sd(AKL_T2_finT4$TotalScore)
+
+# Time 3 Processing
+AKL_T3_finT4 <- filter(AKL, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+AKL_T3_finT4 <- merge(AKL_finT4_MasterList, AKL_T3_finT4, by = "FamID", all.x = TRUE)
+AKL_T3_finT4 <- na.omit(AKL_T3_finT4)
+
+AKL_T3_Mean_finT4 <- mean(AKL_T3_finT4$TotalScore)
+AKL_T3_SD_finT4 <- sd(AKL_T3_finT4$TotalScore)
+
+# Time 4 Processing
+AKL_T4_finT4 <- filter(AKL, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+AKL_T4_finT4 <- merge(AKL_finT4_MasterList, AKL_T4_finT4, by = "FamID", all.x = TRUE)
+AKL_T4_finT4 <- na.omit(AKL_T4_finT4)
+
+AKL_T4_Mean_finT4 <- mean(AKL_T4_finT4$TotalScore)
+AKL_T4_SD_finT4 <- sd(AKL_T4_finT4$TotalScore)
+
+rm(AKL_finT4_MasterList, AKL_T1_finT4, AKL_T2_finT4, AKL_T3_finT4, AKL_T4_finT4)
+```
+
+```{r ER Puppet}
+ES_Puppet <- select(ES_Puppet, FamID = fam_id, TimePoint = redcap_event_name, TotalScore = total_multiple_choice)
+
+#### Process ES_Puppet All Means ####
+# Time 1 Processing
+ES_Puppet_T1 <- filter(ES_Puppet, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+ES_Puppet_T1 <- merge(MasterList, ES_Puppet_T1, by = "FamID", all.x = TRUE)
+ES_Puppet_T1 <- na.omit(ES_Puppet_T1)
+
+ES_Puppet_T1_Mean <- mean(ES_Puppet_T1$TotalScore)
+ES_Puppet_T1_SD <- sd(ES_Puppet_T1$TotalScore)
+
+# Time 2 Processing
+ES_Puppet_T2 <- filter(ES_Puppet, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+ES_Puppet_T2 <- merge(MasterList, ES_Puppet_T2, by = "FamID", all.x = TRUE)
+ES_Puppet_T2 <- na.omit(ES_Puppet_T2)
+
+ES_Puppet_T2_Mean <- mean(ES_Puppet_T2$TotalScore)
+ES_Puppet_T2_SD <- sd(ES_Puppet_T2$TotalScore)
+
+# Time 3 Processing
+ES_Puppet_T3 <- filter(ES_Puppet, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+ES_Puppet_T3 <- merge(MasterList, ES_Puppet_T3, by = "FamID", all.x = TRUE)
+ES_Puppet_T3 <- na.omit(ES_Puppet_T3)
+
+ES_Puppet_T3_Mean <- mean(ES_Puppet_T3$TotalScore)
+ES_Puppet_T3_SD <- sd(ES_Puppet_T3$TotalScore)
+
+# Time 4 Processing
+ES_Puppet_T4 <- filter(ES_Puppet, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+ES_Puppet_T4 <- merge(MasterList, ES_Puppet_T4, by = "FamID", all.x = TRUE)
+ES_Puppet_T4 <- na.omit(ES_Puppet_T4)
+
+ES_Puppet_T4_Mean <- mean(ES_Puppet_T4$TotalScore)
+ES_Puppet_T4_SD <- sd(ES_Puppet_T4$TotalScore)
+
+#### Process ES_Puppet Finished T4 Means ####
+# Pool IDs that made it through every time point
+ES_Puppet_finT4_MasterList <- merge(ES_Puppet_T1, ES_Puppet_T4, by = "FamID")
+ES_Puppet_finT4_MasterList <- select(ES_Puppet_finT4_MasterList, FamID)
+
+#rm(ES_Puppet_T1, ES_Puppet_T2, ES_Puppet_T3, ES_Puppet_T4)
+ 
+# Time 1 Processing
+ES_Puppet_T1_finT4 <- filter(ES_Puppet, TimePoint == "time_1_arm_1" | TimePoint == "time_1_arm_2")
+ES_Puppet_T1_finT4 <- merge(ES_Puppet_finT4_MasterList, ES_Puppet_T1_finT4, by = "FamID", all.x = TRUE)
+ES_Puppet_T1_finT4 <- na.omit(ES_Puppet_T1_finT4)
+
+ES_Puppet_T1_Mean_finT4 <- mean(ES_Puppet_T1_finT4$TotalScore)
+ES_Puppet_T1_SD_finT4 <- sd(ES_Puppet_T1_finT4$TotalScore)
+
+# Time 2 Processing
+ES_Puppet_T2_finT4 <- filter(ES_Puppet, TimePoint == "time_2_arm_1" | TimePoint == "time_2_arm_2")
+ES_Puppet_T2_finT4 <- merge(ES_Puppet_finT4_MasterList, ES_Puppet_T2_finT4, by = "FamID", all.x = TRUE)
+ES_Puppet_T2_finT4 <- na.omit(ES_Puppet_T2_finT4)
+
+ES_Puppet_T2_Mean_finT4 <- mean(ES_Puppet_T2_finT4$TotalScore)
+ES_Puppet_T2_SD_finT4 <- sd(ES_Puppet_T2_finT4$TotalScore)
+
+# Time 3 Processing
+ES_Puppet_T3_finT4 <- filter(ES_Puppet, TimePoint == "time_3_arm_1" | TimePoint == "time_3_arm_2")
+ES_Puppet_T3_finT4 <- merge(ES_Puppet_finT4_MasterList, ES_Puppet_T3_finT4, by = "FamID", all.x = TRUE)
+ES_Puppet_T3_finT4 <- na.omit(ES_Puppet_T3_finT4)
+
+ES_Puppet_T3_Mean_finT4 <- mean(ES_Puppet_T3_finT4$TotalScore)
+ES_Puppet_T3_SD_finT4 <- sd(ES_Puppet_T3_finT4$TotalScore)
+
+# Time 4 Processing
+ES_Puppet_T4_finT4 <- filter(ES_Puppet, TimePoint == "time_4_arm_1" | TimePoint == "time_4_arm_2")
+ES_Puppet_T4_finT4 <- merge(ES_Puppet_finT4_MasterList, ES_Puppet_T4_finT4, by = "FamID", all.x = TRUE)
+ES_Puppet_T4_finT4 <- na.omit(ES_Puppet_T4_finT4)
+
+ES_Puppet_T4_Mean_finT4 <- mean(ES_Puppet_T4_finT4$TotalScore)
+ES_Puppet_T4_SD_finT4 <- sd(ES_Puppet_T4_finT4$TotalScore)
+
+#rm(ES_Puppet_finT4_MasterList, ES_Puppet_T1_finT4, ES_Puppet_T2_finT4, ES_Puppet_T3_finT4, ES_Puppet_T4_finT4)
+```
+
+```{r Table}
+# Make Table for all Means and STD DEVS
+Table_All_Means <- matrix(c(APT_T1_Mean, APT_T1_SD, AKL_T1_Mean, AKL_T1_SD, ES_Puppet_T1_Mean, ES_Puppet_T1_SD, APT_T2_Mean, APT_T2_SD, AKL_T2_Mean, AKL_T2_SD,
+                  ES_Puppet_T2_Mean, ES_Puppet_T2_SD, APT_T3_Mean, APT_T3_SD, AKL_T3_Mean, AKL_T3_SD, ES_Puppet_T3_Mean, ES_Puppet_T3_SD, APT_T4_Mean, APT_T4_SD,
+                AKL_T4_Mean, AKL_T4_SD, ES_Puppet_T4_Mean, ES_Puppet_T4_SD), ncol = 6, byrow = TRUE)
+colnames(Table_All_Means) <- c("Affect Perspective Taking Means", "Affect Perspective Taking Std Dev","Affect Knowledge Labeling Means", 
+                     "Affect Knowledge Labeling Means Std Dev", "Emotion Strategies Puppet Task Means", "Emotion Strategies Puppet Task Std Dev")
+rownames(Table_All_Means) <- c("Time 1", "Time 2", "Time 3", "Time 4")
+
+# Make Table for all IDs that Finished T4 
+Table_finT4 <- matrix(c(APT_T1_Mean_finT4, APT_T1_SD_finT4, AKL_T1_Mean_finT4, AKL_T1_SD_finT4, ES_Puppet_T1_Mean_finT4, ES_Puppet_T1_SD_finT4, APT_T2_Mean_finT4,
+                  APT_T2_SD_finT4, AKL_T2_Mean_finT4, AKL_T2_SD_finT4, ES_Puppet_T2_Mean_finT4, ES_Puppet_T2_SD_finT4, APT_T3_Mean_finT4, APT_T3_SD_finT4, 
+                  AKL_T3_Mean_finT4, AKL_T3_SD_finT4, ES_Puppet_T3_Mean_finT4, ES_Puppet_T3_SD_finT4, APT_T4_Mean_finT4, APT_T4_SD_finT4, AKL_T4_Mean_finT4,
+                  AKL_T4_SD_finT4, ES_Puppet_T4_Mean_finT4, ES_Puppet_T4_SD_finT4), ncol = 6, byrow = TRUE)
+
+colnames(Table_finT4) <- c("Affect Perspective Taking Means (Finished T4)", "Affect Perspective Taking Std Dev (Finished T4)",
+                     "Affect Knowledge Labeling Means (Finished T4)", "Affect Knowledge Labeling Means Std Dev (Finished T4)", 
+                     "Emotion Strategies Puppet Task Means (Finished T4)", "Emotion Strategies Puppet Task Std Dev (Finished T4)")
+
+rownames(Table_finT4) <- c("Time 1", "Time 2", "Time 3", "Time 4")
+
+# Make Table for all IDs that Finished T4 (JUST PUPPET ER)
+Puppet_T1n_FinT4 <- nrow(ES_Puppet_T1_finT4)
+Puppet_T2n_FinT4 <- nrow(ES_Puppet_T2_finT4)
+Puppet_T3n_FinT4 <- nrow(ES_Puppet_T3_finT4)
+Puppet_T4n_FinT4 <- nrow(ES_Puppet_T4_finT4)
+
+Table_Puppet_FinT4 <- matrix(c(ES_Puppet_T1_Mean_finT4, ES_Puppet_T1_SD_finT4, Puppet_T1n_FinT4, ES_Puppet_T2_Mean_finT4, ES_Puppet_T2_SD_finT4, Puppet_T2n_FinT4, ES_Puppet_T3_Mean_finT4, ES_Puppet_T3_SD_finT4, Puppet_T3n_FinT4, ES_Puppet_T4_Mean_finT4, ES_Puppet_T4_SD_finT4, Puppet_T4n_FinT4), ncol = 3, byrow = TRUE)
+
+colnames(Table_Puppet_FinT4) <- c("Emotion Strategies Puppet Task Means (Finished T4)", "Emotion Strategies Puppet Task Std Dev (Finished T4)",
+                                  "Emotion Strategies Puppet Task Total N (Finished T4)")
+
+rownames(Table_Puppet_FinT4) <- c("Time 1", "Time 2", "Time 3", "Time 4")
+
+```
+
+
+
+
+
+

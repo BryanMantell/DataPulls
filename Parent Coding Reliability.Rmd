@@ -1,0 +1,206 @@
+---
+title: "Parent Coding Reliability"
+author: "Bryan"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(irr)
+library(xlsx)
+```
+
+```{r Imports}
+rm(list = ls())
+
+PC_Deonna <- read.csv("PC_Deonna.csv", stringsAsFactors = FALSE)
+PC_Danielle <- read.csv("PC_Danielle.csv", stringsAsFactors = FALSE)
+PC_Transposed <- read.csv("PC_Transposed.csv", stringsAsFactors = FALSE)
+```
+
+```{r Prep}
+#Create Name for new data frames
+PC_Names <- c("Danielle", "Deonna")
+
+# Prep PosAffect Mom
+PC_PosAffect_Mom <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_PosAffect_Mom) <- PC_Names
+
+PC_PosAffect_Mom$Danielle <- select(PC_Danielle, Pos_Affect_Mom)
+PC_PosAffect_Mom$Deonna <- select(PC_Deonna, Pos_Affect_Mom)
+
+# Prep Negativity Mom 
+PC_Negativity_Mom <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Negativity_Mom) <- PC_Names
+
+PC_Negativity_Mom$Danielle <- select(PC_Danielle, Negativity_Mom)
+PC_Negativity_Mom$Deonna <- select(PC_Deonna, Negativity_Mom)
+
+# Prep Interactiveness Mom 
+PC_Interactiveness <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Interactiveness) <- PC_Names
+
+PC_Interactiveness$Danielle <- select(PC_Danielle, Interactiveness)
+PC_Interactiveness$Deonna <- select(PC_Deonna, Interactiveness)
+
+# Prep Limit Setting 
+#PC_Limit_Setting <- data.frame(matrix(ncol = 2,nrow = 45))
+#colnames(PC_Limit_Setting) <- PC_Names
+
+#PC_Limit_Setting$Danielle <- select(PC_Danielle, Limit_Setting)
+#PC_Limit_Setting$Deonna <- select(PC_Deonna, Limit_Setting)
+
+# Prep Responsiveness
+#PC_Responsiveness <- data.frame(matrix(ncol = 2,nrow = 45))
+#colnames(PC_Responsiveness) <- PC_Names
+
+#PC_Responsiveness$Danielle <- select(PC_Danielle, Responsiveness)
+#PC_Responsiveness$Deonna <- select(PC_Deonna, Responsiveness)
+
+# Prep Respect_Autonomy
+PC_Respect_Autonomy <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Respect_Autonomy) <- PC_Names
+
+PC_Respect_Autonomy$Danielle <- select(PC_Danielle, Respect_Autonomy)
+PC_Respect_Autonomy$Deonna <- select(PC_Deonna, Respect_Autonomy)
+
+# Prep Negative_Control
+PC_Negative_Control <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Negative_Control) <- PC_Names
+
+PC_Negative_Control$Danielle <- select(PC_Danielle, Negative_Control)
+PC_Negative_Control$Deonna <- select(PC_Deonna, Negative_Control)
+
+# Prep Guidance
+PC_Guidance <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Guidance) <- PC_Names
+
+PC_Guidance$Danielle <- select(PC_Danielle, Guidance)
+PC_Guidance$Deonna <- select(PC_Deonna, Guidance)
+
+# Prep PosAffect Child
+PC_PosAffect_Child <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_PosAffect_Child) <- PC_Names
+
+PC_PosAffect_Child$Danielle <- select(PC_Danielle, Pos_Affect_Child)
+PC_PosAffect_Child$Deonna <- select(PC_Deonna, Pos_Affect_Child)
+
+# Prep Negativity Child
+PC_Negativity_Child <- data.frame(matrix(ncol = 2,nrow = 70))
+colnames(PC_Negativity_Child) <- PC_Names
+
+PC_Negativity_Child$Danielle <- select(PC_Danielle, Negativity_Child)
+PC_Negativity_Child$Deonna <- select(PC_Deonna, Negativity_Child)
+
+# Prep Child Compliance
+#PC_Child_Compliance <- data.frame(matrix(ncol = 2,nrow = 45))
+#colnames(PC_Child_Compliance) <- PC_Names
+
+#PC_Child_Compliance$Danielle <- select(PC_Danielle, Child_Compliance)
+#PC_Child_Compliance$Deonna <- select(PC_Deonna, Child_Compliance)
+```
+
+```{r ICCs}
+# ICC for all categories transposed 
+PC_Transposed_InterR <- icc(PC_Transposed, model = "twoway", type = "agreement", unit = "single")
+PC_Transposed_InterR <- PC_Transposed_InterR$value
+
+# ICC for Pos Affect Mom
+Maternal_Positive_Affect_R <- icc(PC_PosAffect_Mom, model = "twoway", type = "agreement", unit = "single")
+Maternal_Positive_Affect_R <- Maternal_Positive_Affect_R$value
+
+# ICC for Negativity Mom
+Maternal_Negativity_R <- icc(PC_Negativity_Mom, model = "twoway", type = "agreement", unit = "single")
+Maternal_Negativity_R <- Maternal_Negativity_R$value
+
+# ICC for Interactiveness
+Maternal_Interactiveness_R <- icc(PC_Interactiveness, model = "twoway", type = "agreement", unit = "single")
+Maternal_Interactiveness_R <- Maternal_Interactiveness_R$value
+
+# ICC for Limit Setting
+#Maternal_LimitSetting_R <- icc(PC_Limit_Setting, model = "twoway", type = "agreement", unit = "single")
+#Maternal_LimitSetting_R <- Maternal_LimitSetting_R$value
+
+# ICC for Responsiveness
+#Maternal_Responsiveness_R <- icc(PC_Responsiveness, model = "twoway", type = "agreement", unit = "single")
+#Maternal_Responsiveness_R <- Maternal_Responsiveness_R$value
+
+# ICC for Respect_Autonomy
+Maternal_RespectForAutonomy_R <- icc(PC_Respect_Autonomy, model = "twoway", type = "agreement", unit = "single")
+Maternal_RespectForAutonomy_R <- Maternal_RespectForAutonomy_R$value
+
+# ICC for Negative_Control
+Maternal_Negative_Control_R <- icc(PC_Negative_Control, model = "twoway", type = "agreement", unit = "single")
+Maternal_Negative_Control_R <- Maternal_Negative_Control_R$value
+
+# ICC for Guidance
+GuidanceAndStructure_R <- icc(PC_Guidance, model = "twoway", type = "agreement", unit = "single")
+GuidanceAndStructure_R <- GuidanceAndStructure_R$value
+
+# ICC for PosAffect Child
+Child_Positive_Affect_R <- icc(PC_PosAffect_Child, model = "twoway", type = "agreement", unit = "single")
+Child_Positive_Affect_R <- Child_Positive_Affect_R$value
+
+# ICC for Negativity Child
+Child_Negativity_R <- icc(PC_Negativity_Child, model = "twoway", type = "agreement", unit = "single")
+Child_Negativity_R <- Child_Negativity_R$value
+
+#ICC for Child Compliance
+#Child_Compliance_InterR <- icc(PC_Child_Compliance, model = "twoway", type = "agreement", unit = "single")
+#Child_Compliance_InterR <- Child_Compliance_InterR$value
+```
+
+```{r Clean}
+rm(PC_Names)
+
+```
+
+```{r differences}
+
+#Differences in Guidance Scores
+Guidance_diff <- PC_Guidance$Deonna - PC_Guidance$Danielle
+
+PC_Guidance_Diff <- PC_Guidance %>% 
+  mutate(Guidance_diff$Guidance)
+
+#Differences in Interactiveness Scores
+Interactiveness_diff <- PC_Interactiveness$Deonna - PC_Interactiveness$Danielle
+
+PC_Interactiveness_Diff <- PC_Interactiveness %>% 
+  mutate(Interactiveness_diff$Interactiveness)
+
+#Differences in Maternal Negativity
+Negativity_Mom_diff <- PC_Negativity_Mom$Deonna - PC_Negativity_Mom$Danielle
+
+PC_Negativity_Mom_Diff <- PC_Negativity_Mom %>% 
+  mutate(Negativity_Mom_diff$Negativity_Mom)
+
+#Differences in Autonomy
+Respect_Autonomy_diff <- PC_Respect_Autonomy$Deonna - PC_Respect_Autonomy$Danielle
+
+PC_Respect_Autonomy_Diff <- PC_Respect_Autonomy %>% 
+  mutate(Respect_Autonomy_diff$Respect_Autonomy)
+
+#Differences in Positive Affect
+PosAffect_Child_diff <- PC_PosAffect_Child$Deonna - PC_PosAffect_Child$Danielle
+
+PC_PosAffect_Child_Diff <- PC_PosAffect_Child %>% 
+  mutate(PosAffect_Child_diff$Pos_Affect_Child)
+```
+
+```{r Export}
+write.xlsx(PC_Guidance_Diff, "Parent Coding Differences/PC_Guidance_Diff.xlsx")
+write.xlsx(PC_Interactiveness_Diff,"Parent Coding Differences/PC_Interactiveness_Diff.xlsx")
+write.xlsx(PC_Negativity_Mom_Diff, "Parent Coding Differences/PC_Negativity_Mom_Diff.xlsx")
+write.xlsx(PC_Respect_Autonomy_Diff, "Parent Coding Differences/PC_Respect_Autonomy_Diff.xlsx")
+write.xlsx(PC_PosAffect_Child_Diff, "Parent Coding Differences/PC_PosAffect_Child_Diff.xlsx")
+ 
+```
+
+
+
+

@@ -1,0 +1,269 @@
+---
+title: "Christina - Maternal Suicide"
+author: "Bryan"
+date: "10/7/2020"
+output: html_document
+---
+
+This Data Request pulls from 3 Measures: SBQ, SIDP-IV, and the PHQ.
+This Data Request pulls 6 Extra Demographics: Maternal Age, Maternal Race/Ethnicity, Income, Marital Status, Maternal Education, and Number of Children in the Home.  
+
+```{r setup, include=FALSE}
+# install Packages
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(eeptools)
+```
+
+```{r Master List}
+# Empty Global Environment
+rm(list = ls())
+
+# Import Master List from Data Base
+UO_MasterList <- read.csv("ID_info/MasterList.csv")
+
+# Filter Master List by Group assignment (New N = 85)
+UO_MasterList <- filter(UO_MasterList, Group_Assignment == "Assigned Group 1 (DBT)" |
+                   Group_Assignment == "Assigned Group 2 (FSU)" |
+                   Group_Assignment == "Assigned Group 3 (HC)")
+
+# Filter Master List by Eligibility Status (New N = 84)
+UO_MasterList <- filter(UO_MasterList, Eligibility_Status == "enrolled")
+
+# Filter out all NAs in date columns so we can calc age at T1 AND age at intake
+UO_Intake_Age <- filter(UO_MasterList, Mom_DOB != "" & Intake_Date != "")
+UO_T1_Age <- filter(UO_MasterList, Mom_DOB != "" & T1_Date != "")
+
+# Change the date columns to a Date data type
+UO_Intake_Age$Mom_DOB <- as.Date(UO_Intake_Age$Mom_DOB)
+UO_Intake_Age$Intake_Date <- as.Date(UO_Intake_Age$Intake_Date)
+
+UO_T1_Age$Mom_DOB <- as.Date(UO_T1_Age$Mom_DOB)
+UO_T1_Age$T1_Date <- as.Date(UO_T1_Age$T1_Date)
+
+# Calculate age at Intake
+UO_Intake_Age$MomAgeAt_Intake_Months <- floor(age_calc(UO_Intake_Age$Mom_DOB, UO_Intake_Age$Intake_Date, units = "months"))
+UO_Intake_Age$MomAgeAt_Intake_Years <- floor(age_calc(UO_Intake_Age$Mom_DOB, UO_Intake_Age$Intake_Date, units = "years"))
+
+# Calculate age at T1
+UO_T1_Age$MomAgeAt_T1_Months <- floor(age_calc(UO_T1_Age$Mom_DOB, UO_T1_Age$T1_Date, units = "months"))
+UO_T1_Age$MomAgeAt_T1_Years <- floor(age_calc(UO_T1_Age$Mom_DOB, UO_T1_Age$T1_Date, units = "years"))
+
+# Edit AgePrep Sheet to merge with rest of Master sheet
+UO_Intake_Age <- select(UO_Intake_Age, FamID, MomAgeAt_Intake_Months, MomAgeAt_Intake_Years)
+UO_T1_Age <- select(UO_T1_Age, FamID, MomAgeAt_T1_Months, MomAgeAt_T1_Years)
+
+# Merge Age prep back with MasterList
+UO_MasterList <- merge(UO_MasterList, UO_Intake_Age, by = "FamID", all.x = TRUE)
+UO_MasterList <- merge(UO_MasterList, UO_T1_Age, by = "FamID", all.x = TRUE)
+
+# Remove AgePrep sheet from enviroment
+rm(UO_MasterList_AgePrep)
+
+# Select all columns in Master sheet to be binded with data
+UO_MasterList <- select(UO_MasterList, FamID, Group_Assignment, MomAgeAt_Intake_Months, MomAgeAt_Intake_Years, MomAgeAt_T1_Months, MomAgeAt_T1_Years, Mom_Ethnicity)
+
+```
+
+```{r Demographics}
+# Import excel sheet
+UO_Demographics <- read.csv("Demographic_info/UO_Demographics.csv", stringsAsFactors = FALSE)
+UO_Demographics_2 <- read.csv("Demographic_info/UO_Demographics_2.csv", stringsAsFactors = FALSE)
+
+# Select only the necessary coloumns 
+UO_Demographics <- select(UO_Demographics, FamID = Q144, Mother_Race_Eth = Q2,
+                          Mother_Race_Eth_Details = Q2_7_TEXT, Material_Status = Q4,
+                          Material_Status_Details = Q4_8_TEXT, Family_Income = Q71,
+                          Maternal_Edu = Q58_1, Sisters_AtHome = Q20, 
+                          Brothers_AtHome = Q23, StepSisters_AtHome = Q30,
+                          StepBrothers_AtHome = Q33)
+
+UO_Demographics_2 <- select(UO_Demographics_2, FamID = Q150, Mother_Race_Eth = Q152,
+                          Mother_Race_Eth_Details = Q151, Material_Status = Q153,
+                          Material_Status_Details = Q153_8_TEXT, Family_Income = Q216,
+                          Maternal_Edu = Q206_1, Sisters_AtHome = Q169, 
+                          Brothers_AtHome = Q172, StepSisters_AtHome = Q178, 
+                          StepBrothers_AtHome = Q181)
+
+# Bind 2 data sets together
+UO_Demographics <- rbind(UO_Demographics, UO_Demographics_2)
+
+# Remove Demo 2 sheet now that it is binded 
+rm(UO_Demographics_2)
+
+# Turn the child at home and total sibling coloumns into numeric varaibles so we can SUM
+UO_Demographics[,8:11] <- sapply(UO_Demographics[,8:11],as.numeric)
+
+# Calculate totals for children at home
+UO_Demographics$Total_Children_AtHome <- rowSums(UO_Demographics[, c("Sisters_AtHome", "Brothers_AtHome",
+                                                              "StepSisters_AtHome", "StepBrothers_AtHome")],na.rm = TRUE)
+# Race and Ethnicity item by item before recode
+Race_Eth <- merge(UO_Demographics, UO_MasterList, by = "FamID")
+Race_Eth <- select(Race_Eth, FamID, Mother_Race_Eth, Mother_Race_Eth_Details)
+write.csv(Race_Eth, "Race_Eth_ItemByItem.csv")
+
+# Recoding Race and Ethnicity
+UO_Demographics <- UO_Demographics %>%
+  mutate(Mother_Race_Eth = ifelse(Mother_Race_Eth == "European American or White", "White",  
+                           ifelse(Mother_Race_Eth == "White", "White",
+                           ifelse(Mother_Race_Eth == "Latino(a) or Hispanic", "LatHisp",
+                           ifelse(Mother_Race_Eth == "African-American or Black", "AfAm",
+                           ifelse(Mother_Race_Eth == "Black or African American", "AfAm",
+                           ifelse(Mother_Race_Eth == "Other", "Multiracial",
+                           ifelse(Mother_Race_Eth == "NA", "NA","Multiracial"))))))))
+# Write to csv file
+write.csv(UO_Demographics, file = "Maternal_Suicide_Data/UO_Demographics_ItembyItem.csv")
+
+# Edit Demo sheet to merge with MasterList
+UO_Demographics <- select(UO_Demographics, FamID, Mom_Race = Mother_Race_Eth, Material_Status, Family_Income, Maternal_Edu, Total_Children_AtHome) 
+
+# Merge UO_Demographics with Master List
+Maternal_Suicide_Data <- merge(UO_MasterList, UO_Demographics, by = "FamID")
+  
+# Remove UO Demo from enviroment
+rm(UO_Demographics)
+```
+
+```{r SBQ}
+# Import T1 survey 
+SBQ <- read.csv("Measures/UO_SBQ_PHQ.csv", stringsAsFactors = FALSE)
+
+# Select the SBQ questions
+SBQ <- select(SBQ, FamID = Q8, srm_sbq_1 = Q1, srm_sbq_2 = Q2, srm_sbq_3 = Q3, srm_sbq_4 = Q4)
+
+# Recode strings to numbers for item 1
+SBQ[SBQ == "1. Never"] <- 1 
+SBQ[SBQ == "2. It was just a passing thought"] <- 2
+SBQ[SBQ == "3a. I have had a plan at least once to kill myself but did not try to do it"] <- 3
+SBQ[SBQ == "3b. I have had a plan at least once to kill myself and really wanted to die"] <- 3 
+SBQ[SBQ == "4a. I have attempted to kill myself, but did not want to die"] <- 4
+SBQ[SBQ == "4b. I have attempted to kill myself, and really hoped to die"] <- 4
+
+# Recode strings to numbers for item 2
+SBQ[SBQ == "2. Rarely (1 time)"] <- 2
+SBQ[SBQ == "3. Sometimes (2 times)"] <- 3
+SBQ[SBQ == "4. Often (3-4 times)"] <- 4
+SBQ[SBQ == "5. Very often (5 or more times)"] <- 5
+
+# Recode strings to numbers for item 3
+SBQ[SBQ == "1. No"] <- 1 
+SBQ[SBQ == "2a. Yes, at one time, but did not really want to die"] <- 2 
+SBQ[SBQ == "2b. Yes, at one time, and really wanted to die"] <- 2 
+SBQ[SBQ == "3a. Yes, more than once, but did not really want to do it"] <- 3 
+SBQ[SBQ == "3b. Yes, more than once, and really wanted to do it"] <- 3
+
+# Recode strings to numbers for item 4
+SBQ[SBQ == "0. Never"] <- 0 
+SBQ[SBQ == "1. No chance at all"] <- 1
+SBQ[SBQ == "2. Rather unlikely"] <- 2
+SBQ[SBQ == "4. Likely"] <- 4
+
+# Turn numbers numeric 
+SBQ[,2:5] <- sapply(SBQ[,2:5],as.numeric)
+
+# Check NA percentage
+SBQ$SBQ_NACheck <- rowSums(is.na(select(SBQ, starts_with("srm"))))/ncol(dplyr::select(SBQ, starts_with("srm")))
+
+# Total with 67% rule
+SBQ$sbq_total <- ifelse(SBQ$SBQ_NACheck < 0.67, rowSums(SBQ[, c("srm_sbq_1",	"srm_sbq_2","srm_sbq_3", "srm_sbq_4")], na.rm = FALSE), "Not Enough Data")
+
+# Export the item by item information
+write.csv(SBQ, file = "Maternal_Suicide_Data/SBQ_ItembyItem.csv")
+
+# Edit SBQ sheet to merge with master sheet
+SBQ <- select(SBQ, FamID, sbq_total)
+
+# Merge SBQ to Final sheet
+Maternal_Suicide_Data <- merge(Maternal_Suicide_Data, SBQ, by = "FamID", all.x = TRUE)
+
+# Remove SBQ sheet from environment
+rm(SBQ)
+```
+
+```{r PHQ}
+# Import T1 survey 
+PHQ <- read.csv("Measures/UO_SBQ_PHQ.csv", stringsAsFactors = FALSE)
+
+# Select only the needed coloumns 
+PHQ <- select(PHQ, FamID = Q8, srm_phq_1 = Q5_1, srm_phq_2 = Q5_2, srm_phq_3 = Q5_3, srm_phq_4 = Q5_4,
+              srm_phq_5 = Q5_5, srm_phq_6 = Q5_6, srm_phq_7 = Q5_7, srm_phq_8 = Q5_8, srm_phq_9 = Q5_9)
+
+# Recode strings as numbers
+PHQ[PHQ == "Not at all"] <- 0; 
+PHQ[PHQ == "Several days"] <- 1
+PHQ[PHQ == "More than half the days"] <- 2
+PHQ[PHQ == "Nearly every day"] <- 3
+
+# Turn numbers numeric 
+PHQ[,2:10] <- sapply(PHQ[,2:10],as.numeric)
+
+# Check NA percentage
+PHQ$PHQ_NACheck <- rowSums(is.na(select(PHQ, starts_with("srm"))))/ncol(dplyr::select(PHQ, starts_with("srm")))
+
+# Total with 67% rule
+PHQ$phq_total <- ifelse(PHQ$PHQ_NACheck < 0.67, rowSums(PHQ[, c("srm_phq_1",	"srm_phq_2","srm_phq_3", "srm_phq_4")], na.rm = FALSE), "Not Enough Data")
+
+# Write to csv file
+write.csv(PHQ, file = "Maternal_Suicide_Data/PHQ_ItembyItem.csv")
+
+# Edit SBQ sheet to merge with master sheet
+PHQ <- select(PHQ, FamID, phq_total)
+
+# Merge SBQ to Final sheet
+Maternal_Suicide_Data <- merge(Maternal_Suicide_Data, PHQ, by = "FamID", all.x = TRUE)
+
+# Remove SBQ sheet from environment
+rm(PHQ)
+
+```
+
+```{r SIDP}
+# Import UO SIDP
+SIDP <- read.csv("Measures/UO_SIDP.csv")
+
+# Select Item 
+SIDP <- select(SIDP, FamID, brd83a5)
+
+# Write SIDP data
+write.csv(SIDP, file = "Maternal_Suicide_Data/SIDP_ItembyItem.csv")
+
+# Put the SIDP item in to the final sheet
+Maternal_Suicide_Data <- merge(Maternal_Suicide_Data, SIDP, by = "FamID", all.x = TRUE)
+
+rm(SIDP)
+
+```
+
+```{r Final Export}
+write.csv(Maternal_Suicide_Data, file = "Maternal_Suicide_Data/Maternal_Suicide_Final.csv")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

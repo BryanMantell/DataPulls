@@ -1,0 +1,82 @@
+---
+title: "Emotion & Behavior Reliability"
+author: "Bryan"
+date: "12/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(DescTools)
+library(matrixcalc)
+library(tidyverse)
+```
+
+```{r Imports, include=FALSE}
+# Clean Global Environment 
+rm(list = ls())
+
+# Import Data Sets
+Emotion <- read.csv("Emotion_Reliability.csv", stringsAsFactors = FALSE)
+Behavior <- read.csv("Behavior_Reliability.csv", stringsAsFactors = FALSE)
+```
+
+```{r Behavior Cohen's Kappa}
+Behavior_Scores <- xtabs (~ Behavior$LE + Behavior$DA)
+
+# Check if Matrix is square (It needs to be for Cohen's Kappa to run)
+if(is.square.matrix(Behavior_Scores) == TRUE) { 
+  print("The Matrix is square, running Cohen's Kappa...")
+  Behavior_Kappa <- CohenKappa(Behavior_Scores)
+  print("Finished, the Kappa score is:")
+  Behavior_Kappa
+} else {
+  print("The Matrix is NOT square, displaying Matrix...") 
+  Behavior_Scores
+  }   
+rm(Behavior_Scores)
+
+```
+
+```{r Emotion Kappa Calulation}
+Emotion_Scores <- xtabs (~ Emotion$LE + Emotion$DA)
+
+if(is.square.matrix(Emotion_Scores) == TRUE) { 
+  print("The Matrix is square, running Cohen's Kappa...")
+  Emotion_Kappa <- CohenKappa(Emotion_Scores)
+  print("Finished, the Kappa score is:")
+  Emotion_Kappa
+} else {
+  print("The Matrix is NOT square, displaying Matrix...") 
+  Emotion_Scores
+  }   
+rm(Emotion_Scores)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r }
+function(Bryan+kappa)
+
+
+```
+
+
+
+
+

@@ -1,0 +1,100 @@
+---
+title: "Inter-Rater Reliability"
+author: "Bryan & Min"
+date: "9/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(irr)
+```
+
+```{r Imports}
+rm(list = ls())
+
+EmoSoc_T1 <- read.csv("EmoSoc_T1.csv", stringsAsFactors = FALSE)
+```
+
+```{r Filter Emo Soc}
+# Pool double scored data into it's own data frame
+EmoSoc_DS <- filter(EmoSoc_T1, grepl("_DS", fam_id))
+
+# Create list of IDs to filter by
+IDlist <- strsplit(EmoSoc_DS$fam_id, "_DS")
+
+# Pool double scored data that we want to compare into it's own data frame
+EmoSoc_Ori <- EmoSoc_T1 %>% filter(fam_id %in% IDlist)
+
+# Modify the double scored FamIDs so that it only contains the needed question 
+EmoSoc_DS <- select(EmoSoc_DS, c(FamID= fam_id, Problem_Focused_DS = om_emosoc_1, Physical_Comfort_DS = om_emosoc_2, Expressive_Encouragement_DS = om_emosoc_3, Distraction_DS = om_emosoc_4, Cognitive_Reframing_DS = om_emosoc_6, Invalidation_DS = om_emosoc_7, Punitive_Reactions_DS = om_emosoc_8))
+
+# Get rid of the _DS so that the FamIDs match eachother
+EmoSoc_DS$FamID <- strsplit(EmoSoc_DS$FamID, "_DS")
+
+# Modify the orignal scored FamIDs so that it only contains the needed question
+EmoSoc_Ori <- select(EmoSoc_Ori, c(FamID = fam_id, Problem_Focused = om_emosoc_1, Physical_Comfort = om_emosoc_2, Expressive_Encouragement = om_emosoc_3, Distraction = om_emosoc_4, Cognitive_Reframing = om_emosoc_6, Invalidation = om_emosoc_7, Punitive_Reactions = om_emosoc_8))
+
+# Merge the double scored FamIDs with the Orginal scored FamIDs so that there answers for the target question are next to each other
+EmoSoc_DSandCompare <- merge(EmoSoc_Ori, EmoSoc_DS, by="FamID")
+
+# Get rid of NAs
+EmoSoc_DSandCompare <- na.omit(EmoSoc_DSandCompare)
+
+# Clean environment
+rm(EmoSoc_DS, EmoSoc_Ori, IDlist, EmoSoc_T1)
+```
+
+```{r Prep}
+# Omit everything besdies the target question
+EmoSoc_Problem_Focused <- select(EmoSoc_DSandCompare, starts_with("Problem_Focused"))
+EmoSoc_Physical_Comfort <- select(EmoSoc_DSandCompare, starts_with("Physical_Comfort"))
+EmoSoc_Expressive_Encouragement <- select(EmoSoc_DSandCompare, starts_with("Expressive_Encouragement"))
+EmoSoc_Distraction <- select(EmoSoc_DSandCompare, starts_with("Distraction"))
+EmoSoc_Cognitive_Reframing<- select(EmoSoc_DSandCompare, starts_with("Cognitive_Reframing"))
+EmoSoc_Invalidation <- select(EmoSoc_DSandCompare, starts_with("Invalidation"))
+EmoSoc_Punitive_Reactions <- select(EmoSoc_DSandCompare, starts_with("Punitive_Reactions"))
+
+# Clean environment
+rm(EmoSoc_DSandCompare)
+```
+
+```{r Reliabilities}
+ProblemFocused_R <- icc(EmoSoc_Problem_Focused, model = "twoway", type = "agreement", unit = "single")
+ProblemFocused_R <- ProblemFocused_R$value
+
+EmoSoc_Physical_Comfort_R <- icc(EmoSoc_Physical_Comfort, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Physical_Comfort_R <- EmoSoc_Physical_Comfort_R$value
+
+EmoSoc_Expressive_Encouragement_R <- icc(EmoSoc_Expressive_Encouragement, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Expressive_Encouragement_R <- EmoSoc_Expressive_Encouragement_R$value
+
+EmoSoc_Distraction_R <- icc(EmoSoc_Distraction, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Distraction_R <- EmoSoc_Distraction_R$value
+
+EmoSoc_Cognitive_Reframing_R <- icc(EmoSoc_Cognitive_Reframing, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Cognitive_Reframing_R <- EmoSoc_Cognitive_Reframing_R$value
+
+EmoSoc_Invalidation_R <- icc(EmoSoc_Invalidation, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Invalidation_R <- EmoSoc_Invalidation_R$value
+
+EmoSoc_Punitive_Reactions_R <- icc(EmoSoc_Punitive_Reactions, model = "twoway", type = "agreement", unit = "single")
+EmoSoc_Punitive_Reactions_R <- EmoSoc_Punitive_Reactions_R$value
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

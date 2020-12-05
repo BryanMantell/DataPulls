@@ -1,0 +1,530 @@
+---
+title: "Parental Apology"
+author: "Bryan"
+date: "9/2/2020"
+output: html_document
+---
+
+```{r Setup, include=FALSE}
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(irr)
+```
+
+```{r Import and Global Filter}
+#Clears Environment #
+rm(list = ls())
+
+# Impots the Parental Apology Survey
+PA_Survey<- read.csv("Parental_Apology_Survey.csv", stringsAsFactors = FALSE)
+
+# Filter out those who did not consent
+PA_Survey <- PA_Survey %>% filter(consent == "Agree")
+```
+
+```{r Demographics}
+PA_Demo <- select(PA_Survey, ID = ResponseId, consent, child_age, child_gender, relation = Q273, mom_age = age, mom_gend = gender, mom_race = race, mom_eth = eth, mom_orien = orien, mom_relstatus = relstatus, mom_ed = ed, mom_currentocc = Q294, people_in_household = Q278, primary_caretaker = child1, child_bio, mom_religion = religion)
+
+
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+APQ Processing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```{r APQ Processing}
+#### APQ: Parse, Filter, and Rename ####
+# Select all varaibles needed for the APQ
+PA_APQ <- select(PA_Survey, ResponseId, consent, contains("APQ"))
+
+# Rename APQ questions to be more clear 
+APQ_Names <- c("ID", "Consent", "APQ_01","APQ_02","APQ_03","APQ_04","APQ_05","APQ_06","APQ_07","APQ_08","APQ_09","APQ_10","APQ_11","APQ_12",
+            "APQ_13","APQ_14","APQ_15","APQ_16","APQ_17","APQ_18","APQ_19","APQ_20","APQ_21","APQ_22","APQ_23","APQ_24","APQ_25","APQ_26",
+            "APQ_27","APQ_28","APQ_29","APQ_30","APQ_31","APQ_32","APQ_34", "APQ_36","APQ_37", "APQ_39","APQ_40",
+            "APQ_41","APQ_42")
+
+names(PA_APQ) <- APQ_Names
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### APQ: Recoding ####
+# Recode strings to numbers
+PA_APQ[PA_APQ == "Never"] <- 1; 
+PA_APQ[PA_APQ == "Almost never"] <- 2;
+PA_APQ[PA_APQ == "Sometimes"] <- 3;
+PA_APQ[PA_APQ == "Often"] <- 4;
+PA_APQ[PA_APQ == "Always"] <- 5
+
+# Make number numeric
+PA_APQ[,3:41] <- sapply(PA_APQ[,3:41],as.numeric)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### APQ: Imputation ####
+# Craeted a new coloumn that counts the amount of missing data in each row
+PA_APQ$NACheck <- rowSums(is.na(select(PA_APQ, starts_with("APQ"))))/ncol(dplyr::select(PA_APQ, starts_with("APQ")))
+
+# Drop people who are less than 67% 
+APQ_DROP <- PA_APQ[PA_APQ$NACheck > 0.67, ]
+PA_APQ <- PA_APQ[PA_APQ$NACheck <= 0.67, ]
+
+# Replace NAs with specific average for the Involvement subscale
+PA_APQ$APQ_01[is.na(PA_APQ$APQ_01)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_04[is.na(PA_APQ$APQ_04)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_07[is.na(PA_APQ$APQ_07)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_09[is.na(PA_APQ$APQ_09)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_11[is.na(PA_APQ$APQ_11)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_14[is.na(PA_APQ$APQ_14)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_15[is.na(PA_APQ$APQ_15)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_20[is.na(PA_APQ$APQ_20)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_23[is.na(PA_APQ$APQ_23)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+PA_APQ$APQ_26[is.na(PA_APQ$APQ_26)] <- rowMeans(PA_APQ[,c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")], na.rm = TRUE)
+
+# Replace NAs with specific average for the Positive Parenting subscale
+PA_APQ$APQ_02[is.na(PA_APQ$APQ_02)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+PA_APQ$APQ_05[is.na(PA_APQ$APQ_05)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+PA_APQ$APQ_13[is.na(PA_APQ$APQ_13)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+PA_APQ$APQ_16[is.na(PA_APQ$APQ_16)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+PA_APQ$APQ_18[is.na(PA_APQ$APQ_18)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+PA_APQ$APQ_27[is.na(PA_APQ$APQ_27)] <- rowMeans(PA_APQ[,c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")], na.rm = TRUE)
+
+# Replace NAs with specific average for Poor supervison/Monitoring subscale
+PA_APQ$APQ_06[is.na(PA_APQ$APQ_06)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_10[is.na(PA_APQ$APQ_10)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_17[is.na(PA_APQ$APQ_17)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_19[is.na(PA_APQ$APQ_19)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_21[is.na(PA_APQ$APQ_21)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_24[is.na(PA_APQ$APQ_24)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_28[is.na(PA_APQ$APQ_28)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_29[is.na(PA_APQ$APQ_29)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_30[is.na(PA_APQ$APQ_30)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+PA_APQ$APQ_32[is.na(PA_APQ$APQ_32)] <- rowMeans(PA_APQ[,c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")], na.rm = TRUE)
+
+# Replace NAs with specific average for Inconsistent Discipline subscale
+PA_APQ$APQ_03[is.na(PA_APQ$APQ_03)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+PA_APQ$APQ_08[is.na(PA_APQ$APQ_08)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+PA_APQ$APQ_12[is.na(PA_APQ$APQ_12)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+PA_APQ$APQ_22[is.na(PA_APQ$APQ_22)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+PA_APQ$APQ_25[is.na(PA_APQ$APQ_25)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+PA_APQ$APQ_31[is.na(PA_APQ$APQ_31)] <- rowMeans(PA_APQ[,c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")], na.rm = TRUE)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### APQ: Subscales ####
+# Sum of all items for the Involvement scale
+PA_APQ <- add_column(PA_APQ, APQ_Involvement = rowSums(PA_APQ[, c("APQ_01", "APQ_04", "APQ_07", "APQ_09", "APQ_11", "APQ_14", "APQ_15", "APQ_20", "APQ_23", "APQ_26")]))
+
+# Sum of all items for the Positive Parenting scale
+PA_APQ <- add_column(PA_APQ, APQ_PosParenting = rowSums(PA_APQ[, c("APQ_02", "APQ_05", "APQ_13", "APQ_16", "APQ_18", "APQ_27")]))
+
+# Sum of all items for the Poor supervison/Monitoring scale
+PA_APQ <- add_column(PA_APQ, APQ_PoorSupervison = rowSums(PA_APQ[, c("APQ_06", "APQ_10", "APQ_17", "APQ_19", "APQ_21", "APQ_24", "APQ_28", "APQ_29", "APQ_30", "APQ_32")]))
+
+# Sum of all items for the Inconsistent Discipline scale
+PA_APQ <- add_column(PA_APQ, APQ_Inconsistent = rowSums(PA_APQ[, c("APQ_03", "APQ_08", "APQ_12", "APQ_22", "APQ_25", "APQ_31")]))
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### APQ: Table ####
+#APQ_TableMeans <- select(PA_APQ, APQ_Involvement, APQ_PosParenting, APQ_PoorSupervison, APQ_Inconsistent)
+
+#APQ_Involvement_Mean <- mean(APQ_TableMeans$APQ_Involvement,na.rm = T)
+#APQ_PosParenting_Mean <- mean(APQ_TableMeans$APQ_PosParenting,na.rm = T)
+#APQ_PoorSupervison_Mean <- mean(APQ_TableMeans$APQ_PoorSupervison,na.rm = T)
+#APQ_Inconsistent_Mean <- mean(APQ_TableMeans$APQ_Inconsistent,na.rm = T)
+
+#APQ_Mean_Table <- data.frame(APQ_Involvement_Mean, APQ_PosParenting_Mean, APQ_PoorSupervison_Mean, APQ_Inconsistent_Mean, #row.names = "Means")
+
+#kable(APQ_Mean_Table) %>%
+#kable_styling(bootstrap_options = c("striped")) %>%
+#add_header_above(c("APQ Mean Table" = 5))  %>%
+#column_spec(c(1,2,3,3,5), border_right = T, border_left = T, include_thead = T) 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#### APQ: Export and Clean####
+# Create prep sheet for APQ
+PA_APQ_Prep <- select(PA_APQ, ID, APQ_Involvement, APQ_PosParenting, APQ_PoorSupervison, APQ_Inconsistent)
+
+write.csv(PA_APQ, file = "PA_APQ.csv")
+
+rm(APQ_DROP, APQ_TableMeans, APQ_Mean_Table, APQ_Names, PA_APQ)
+```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SDQ Processing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```{r SDQ Processing}
+#### SDQ Parse, Filter, and Rename####
+# Select all varaibles needed for the SDQ 4-10 and SDQ 11-17
+PA_SDQ_4to10 <- select(PA_Survey, ResponseId, consent, contains("Q44."), contains("Q45."), contains("Q46."), Q47, Q48, Q49, contains("Q50"), Q51)
+PA_SDQ_11to17 <- select(PA_Survey, ResponseId, consent, contains("Q55."), contains("Q56."), contains("Q57."), Q58, Q59, Q60, contains("Q61"), Q62)
+
+# Rename SDQ questions to be more clear 
+SDQ_Names <- c("ID", "Consent", "pconsid", "prestles", "psomatic", "pshares", "ptantrum", "ploner", "pobeys", "pworries", "pcaring", "pfidgety", "pfriend", "pfights", "punhappy", "ppopular", "pdistrac", "pclingy", "attention check", "pkind", "plies", "pbullied", "phelpout", "preflect", "psteals", "poldbest", "pafraid", "pattends", "pebddiff", "pebddiff_how_long","pdistres", "pimphome", "pimpfrie", "pimpclas", "pimpleis", "burden")
+
+# Apply ADQ variable names
+names(PA_SDQ_4to10) <- SDQ_Names
+names(PA_SDQ_11to17) <- SDQ_Names
+
+# Add coloumn to each version saying which version it is
+PA_SDQ_4to10$Version <- "4to10"
+PA_SDQ_11to17$Version <- "11to17"
+
+#### SDQ: Recoding ####
+# Recoding the first 25 items of both SDQ versions
+PA_SDQ_4to10[PA_SDQ_4to10 == "Not True"] <- 0
+PA_SDQ_11to17[PA_SDQ_11to17 == "Not True"] <- 0
+
+PA_SDQ_4to10[PA_SDQ_4to10 == "Somewhat True"] <- 1
+PA_SDQ_11to17[PA_SDQ_11to17 == "Somewhat True"] <- 1
+
+PA_SDQ_4to10[PA_SDQ_4to10 == "Certainly True"] <- 2
+PA_SDQ_11to17[PA_SDQ_11to17 == "Certainly True"] <- 2
+
+# Recoding SDQ Impact supplement
+PA_SDQ_4to10[PA_SDQ_4to10 == "Not at all"] <- 0
+PA_SDQ_11to17[PA_SDQ_11to17 == "Not at all"] <- 0
+
+PA_SDQ_4to10[PA_SDQ_4to10 == "Only a little"] <- 0
+PA_SDQ_11to17[PA_SDQ_11to17 == "Only a little"] <- 0
+
+PA_SDQ_4to10[PA_SDQ_4to10 == "A medium amount"] <- 1
+PA_SDQ_11to17[PA_SDQ_11to17 == "A medium amount"] <- 1
+
+PA_SDQ_4to10[PA_SDQ_4to10 == "A great deal"] <- 2
+PA_SDQ_11to17[PA_SDQ_11to17 == "A great deal"] <- 2
+
+# Set cells to numeric
+PA_SDQ_4to10[,3:28] <- sapply(PA_SDQ_4to10[,3:28],as.numeric)
+PA_SDQ_11to17[,3:28] <- sapply(PA_SDQ_11to17[,3:28],as.numeric)
+
+PA_SDQ_4to10[,31:36] <- sapply(PA_SDQ_4to10[,31:36],as.numeric)
+PA_SDQ_11to17[,31:36] <- sapply(PA_SDQ_11to17[,31:36],as.numeric)
+
+
+#### SDQ: Scoring for PA_SDQ_4to10 ####
+# Reverse score PA_SDQ_4to10
+qobeys <- recode(PA_SDQ_4to10$pobeys, "0"=2, "1"=1, "2"=0,.default = NaN)
+qreflect <- recode (PA_SDQ_4to10$preflect, "0"=2, "1"=1, "2"=0,.default = NaN)
+qattends <- recode (PA_SDQ_4to10$pattends, "0"=2, "1"=1, "2"=0,.default = NaN)
+qfriend <- recode (PA_SDQ_4to10$pfriend, "0"=2, "1"=1, "2"=0,.default = NaN)
+qpopular <- recode (PA_SDQ_4to10$ppopular, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqdistres <- recode (PA_SDQ_4to10$pdistres, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimphome <- recode (PA_SDQ_4to10$pimphome, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpfrie <- recode (PA_SDQ_4to10$pimpfrie, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpclas <- recode (PA_SDQ_4to10$pimpclas, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpleis <- recode (PA_SDQ_4to10$pimpleis, "0"=2, "1"=1, "2"=0,.default = NaN)
+
+# Create emotion subscale
+df.pemotion <- data.frame(PA_SDQ_4to10$psomatic, PA_SDQ_4to10$pworries, PA_SDQ_4to10$punhappy, PA_SDQ_4to10$pclingy, PA_SDQ_4to10$pafraid)
+pnemotion <- apply(df.pemotion, 1, function(x) sum(is.na(x)))
+pemotion <- ifelse(pnemotion<3, rowMeans(df.pemotion, na.rm=TRUE), NA)
+pemotion <- as.numeric(pemotion) * 5
+pemotion <- floor(0.5 + pemotion)
+
+# Add to data frame
+PA_SDQ_4to10$pemotion <- pemotion
+
+# Create conduct subscale
+df.pconduct <- data.frame(PA_SDQ_4to10$ptantrum, qobeys, PA_SDQ_4to10$pfights, PA_SDQ_4to10$plies, PA_SDQ_4to10$psteals)
+pnconduct <- apply(df.pconduct, 1, function(x) sum(is.na(x)))
+pconduct <- ifelse(pnconduct<3, rowMeans(df.pconduct, na.rm=TRUE), NA)
+pconduct <- as.numeric(pconduct) * 5
+pconduct <- floor(0.5 + pconduct)
+
+# Add to data frame
+PA_SDQ_4to10$pconduct <- pconduct
+
+# Craete hyper subscale
+df.phyper <- data.frame(PA_SDQ_4to10$prestles, PA_SDQ_4to10$pfidgety, PA_SDQ_4to10$pdistrac, qreflect, qattends)
+pnhyper <- apply(df.phyper, 1, function(x) sum(is.na(x)))
+phyper <- ifelse(pnhyper<3, rowMeans(df.phyper, na.rm=TRUE), NA)
+phyper <- as.numeric(phyper) * 5
+phyper <- floor(0.5 + phyper)
+
+# Add to data frame
+PA_SDQ_4to10$phyper <- phyper
+
+# Create peer subscale
+df.ppeer <- data.frame(PA_SDQ_4to10$ploner, qfriend, qpopular, PA_SDQ_4to10$pbullied, PA_SDQ_4to10$poldbest)
+pnpeer <- apply(df.ppeer, 1, function(x) sum(is.na(x)))
+ppeer <- ifelse(pnpeer<3, rowMeans(df.ppeer, na.rm=TRUE), NA)
+ppeer <- as.numeric(ppeer) * 5
+ppeer <- floor(0.5 + ppeer)
+
+# Add to data frame
+PA_SDQ_4to10$ppeer <- ppeer
+
+# Create prosoc subscale
+df.pprosoc <- data.frame(PA_SDQ_4to10$pconsid, PA_SDQ_4to10$pshares, PA_SDQ_4to10$pcaring, PA_SDQ_4to10$pkind, PA_SDQ_4to10$phelpout)
+pnprosoc <- apply(df.pprosoc, 1, function(x) sum(is.na(x)))
+pprosoc <- ifelse(pnprosoc<3, rowMeans(df.pprosoc, na.rm=TRUE), NA)
+pprosoc <- as.numeric(pprosoc) * 5
+pprosoc <- floor(0.5 + pprosoc)
+
+# Add to data frame
+PA_SDQ_4to10$pprosoc <- pprosoc
+
+# Create impact 
+df.pimpact <- data.frame(PA_SDQ_4to10$pdistres, PA_SDQ_4to10$pimphome, PA_SDQ_4to10$pimpfrie, PA_SDQ_4to10$pimpclas, PA_SDQ_4to10$pimpleis)
+pnimpact <- apply(df.pimpact, 1, function(x) sum(is.na(x)))
+pimpact <- ifelse(!pnimpact==5, qqdistres+qqimphome+qqimpfrie+qqimpclas+qqimpleis, NA)
+pimpact <- ifelse(PA_SDQ_4to10$pebddiff==0, 0, pimpact)
+pimpact <- as.numeric(pimpact)
+pebdtot <- pemotion+pconduct+phyper+ppeer
+
+# Add to data frame
+PA_SDQ_4to10$pebdtot <- pebdtot
+
+rm(qobeys, qreflect, qattends, qfriend, qpopular, qqdistres, qqimphome, qqimpfrie, qqimpclas, qqimpleis, pnemotion, pnconduct, pnhyper, pnpeer, pnprosoc, pnimpact, df.pemotion, df.pconduct, df.phyper, df.ppeer, df.pprosoc, df.pimpact, pconduct, pebdtot, pemotion, phyper, pimpact, ppeer, pprosoc)
+
+#### SBQ: Scoring for PA_SDQ_11to17 ####
+# Reverse score PA_SDQ_11to17
+qobeys <- recode(PA_SDQ_11to17$pobeys, "0"=2, "1"=1, "2"=0,.default = NaN)
+qreflect <- recode (PA_SDQ_11to17$preflect, "0"=2, "1"=1, "2"=0,.default = NaN)
+qattends <- recode (PA_SDQ_11to17$pattends, "0"=2, "1"=1, "2"=0,.default = NaN)
+qfriend <- recode (PA_SDQ_11to17$pfriend, "0"=2, "1"=1, "2"=0,.default = NaN)
+qpopular <- recode (PA_SDQ_11to17$ppopular, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqdistres <- recode (PA_SDQ_11to17$pdistres, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimphome <- recode (PA_SDQ_11to17$pimphome, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpfrie <- recode (PA_SDQ_11to17$pimpfrie, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpclas <- recode (PA_SDQ_11to17$pimpclas, "0"=2, "1"=1, "2"=0,.default = NaN)
+qqimpleis <- recode (PA_SDQ_11to17$pimpleis, "0"=2, "1"=1, "2"=0,.default = NaN)
+
+# Create emotion subscale
+df.pemotion <- data.frame(PA_SDQ_11to17$psomatic, PA_SDQ_11to17$pworries, PA_SDQ_11to17$punhappy, PA_SDQ_11to17$pclingy, PA_SDQ_11to17$pafraid)
+pnemotion <- apply(df.pemotion, 1, function(x) sum(is.na(x)))
+pemotion <- ifelse(pnemotion<3, rowMeans(df.pemotion, na.rm=TRUE), NA)
+pemotion <- as.numeric(pemotion) * 5
+pemotion <- floor(0.5 + pemotion)
+
+# Add to data frame
+PA_SDQ_11to17$pemotion <- pemotion
+
+# Create conduct subscale
+df.pconduct <- data.frame(PA_SDQ_11to17$ptantrum, qobeys, PA_SDQ_11to17$pfights, PA_SDQ_11to17$plies, PA_SDQ_11to17$psteals)
+pnconduct <- apply(df.pconduct, 1, function(x) sum(is.na(x)))
+pconduct <- ifelse(pnconduct<3, rowMeans(df.pconduct, na.rm=TRUE), NA)
+pconduct <- as.numeric(pconduct) * 5
+pconduct <- floor(0.5 + pconduct)
+
+# Add to data frame
+PA_SDQ_11to17$pconduct <- pconduct
+
+# Craete hyper subscale
+df.phyper <- data.frame(PA_SDQ_11to17$prestles, PA_SDQ_11to17$pfidgety, PA_SDQ_11to17$pdistrac, qreflect, qattends)
+pnhyper <- apply(df.phyper, 1, function(x) sum(is.na(x)))
+phyper <- ifelse(pnhyper<3, rowMeans(df.phyper, na.rm=TRUE), NA)
+phyper <- as.numeric(phyper) * 5
+phyper <- floor(0.5 + phyper)
+
+# Add to data frame
+PA_SDQ_11to17$phyper <- phyper
+
+# Create hyper subscale
+df.ppeer <- data.frame(PA_SDQ_11to17$ploner, qfriend, qpopular, PA_SDQ_11to17$pbullied, PA_SDQ_11to17$poldbest)
+pnpeer <- apply(df.ppeer, 1, function(x) sum(is.na(x)))
+ppeer <- ifelse(pnpeer<3, rowMeans(df.ppeer, na.rm=TRUE), NA)
+ppeer <- as.numeric(ppeer) * 5
+ppeer <- floor(0.5 + ppeer)
+
+# Add to data frame
+PA_SDQ_11to17$ppeer <- ppeer
+
+# Create prosoc subscale
+df.pprosoc <- data.frame(PA_SDQ_11to17$pconsid, PA_SDQ_11to17$pshares, PA_SDQ_11to17$pcaring, PA_SDQ_11to17$pkind, PA_SDQ_11to17$phelpout)
+pnprosoc <- apply(df.pprosoc, 1, function(x) sum(is.na(x)))
+pprosoc <- ifelse(pnprosoc<3, rowMeans(df.pprosoc, na.rm=TRUE), NA)
+pprosoc <- as.numeric(pprosoc) * 5
+pprosoc <- floor(0.5 + pprosoc)
+
+# Add to data frame
+PA_SDQ_11to17$pprosoc <- pprosoc
+
+# Create impact 
+df.pimpact <- data.frame(PA_SDQ_11to17$pdistres, PA_SDQ_11to17$pimphome, PA_SDQ_11to17$pimpfrie, PA_SDQ_11to17$pimpclas, PA_SDQ_11to17$pimpleis)
+pnimpact <- apply(df.pimpact, 1, function(x) sum(is.na(x)))
+pimpact <- ifelse(!pnimpact==5, qqdistres+qqimphome+qqimpfrie+qqimpclas+qqimpleis, NA)
+pimpact <- ifelse(PA_SDQ_11to17$pebddiff==0, 0, pimpact)
+pimpact <- as.numeric(pimpact)
+pebdtot <- pemotion+pconduct+phyper+ppeer
+
+# Add to data frame
+PA_SDQ_11to17$pebdtot <- pebdtot
+
+rm(qobeys, qreflect, qattends, qfriend, qpopular, qqdistres, qqimphome, qqimpfrie, qqimpclas, qqimpleis, pnemotion, pnconduct, pnhyper, pnpeer, pnprosoc, pnimpact, df.pemotion, df.pconduct, df.phyper, df.ppeer, df.pprosoc, df.pimpact, pconduct, pebdtot, pemotion, phyper, pimpact, ppeer, pprosoc)
+
+#### SDQ: Bind Versions and Filter ####
+# Bind two versions into 1
+PA_SDQ <- rbind(PA_SDQ_4to10, PA_SDQ_11to17)
+
+# At this point every ID is dupicated becuase we simply binded one under another so the 67% rule will fix this
+PA_SDQ$NACheck <- rowSums(is.na(PA_SDQ[3:36]))/32
+
+# Drop people who are less than 67% 
+SDQ_DROP <- PA_SDQ[PA_SDQ$NACheck > 0.67, ]
+PA_SDQ <- PA_SDQ[PA_SDQ$NACheck <= 0.67, ]
+
+# Double check we have NO duplicates in the data
+duplicated(PA_SDQ$ID)
+
+# Imput out Left over NAs for internalising_problems subscale
+PA_SDQ$psomatic[is.na(PA_SDQ$psomatic)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$pworries[is.na(PA_SDQ$pworries)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$punhappy[is.na(PA_SDQ$punhappy)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$pclingy[is.na(PA_SDQ$pclingy)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$pafraid[is.na(PA_SDQ$pafraid)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$ploner[is.na(PA_SDQ$ploner)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$pfriend[is.na(PA_SDQ$pfriend)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$ppopular[is.na(PA_SDQ$ppopular)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$pbullied[is.na(PA_SDQ$pbullied)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+PA_SDQ$poldbest[is.na(PA_SDQ$poldbest)] <- rowMeans(PA_SDQ[,c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")], na.rm = TRUE)
+
+# Imput out Left over NAs for externalising problems subscale
+PA_SDQ$ptantrum[is.na(PA_SDQ$ptantrum)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$pobeys[is.na(PA_SDQ$pobeys)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$pfights[is.na(PA_SDQ$pfights)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$plies[is.na(PA_SDQ$plies)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$psteals[is.na(PA_SDQ$psteals)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$prestles[is.na(PA_SDQ$prestles)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$pfidgety[is.na(PA_SDQ$pfidgety)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$pdistrac[is.na(PA_SDQ$pdistrac)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$preflect[is.na(PA_SDQ$preflect)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+PA_SDQ$pattends[is.na(PA_SDQ$pattends)] <- rowMeans(PA_SDQ[,c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")], na.rm = TRUE)
+
+# Imput out Left over NAs for prosocial subscale
+PA_SDQ$pconsid[is.na(PA_SDQ$pconsid)] <- rowMeans(PA_SDQ[,c("pconsid", "pshares", "pcaring", "pkind", "phelpout")], na.rm = TRUE)
+PA_SDQ$pshares[is.na(PA_SDQ$pshares)] <- rowMeans(PA_SDQ[,c("pconsid", "pshares", "pcaring", "pkind", "phelpout")], na.rm = TRUE)
+PA_SDQ$pcaring[is.na(PA_SDQ$pcaring)] <- rowMeans(PA_SDQ[,c("pconsid", "pshares", "pcaring", "pkind", "phelpout")], na.rm = TRUE)
+PA_SDQ$pkind[is.na(PA_SDQ$pkind)] <- rowMeans(PA_SDQ[,c("pconsid", "pshares", "pcaring", "pkind", "phelpout")], na.rm = TRUE)
+PA_SDQ$phelpout[is.na(PA_SDQ$phelpout)] <- rowMeans(PA_SDQ[,c("pconsid", "pshares", "pcaring", "pkind", "phelpout")], na.rm = TRUE)
+
+# Add the Three additional subscales 
+PA_SDQ <- add_column(PA_SDQ, SDQ_internalising_problems = rowSums(PA_SDQ[, c("psomatic", "pworries", "punhappy", "pclingy", "pafraid", "ploner", "pfriend", "ppopular", "pbullied", "poldbest")]))
+
+PA_SDQ <- add_column(PA_SDQ, SDQ_externalising_problems = rowSums(PA_SDQ[, c("ptantrum", "pobeys", "pfights", "plies", "psteals", "prestles", "pfidgety", "pdistrac", "preflect", "pattends")]))
+
+PA_SDQ <- add_column(PA_SDQ, SDQ_prosocial = rowSums(PA_SDQ[, c("pconsid", "pshares", "pcaring", "pkind", "phelpout")]))
+
+# Create Prep sheet of SDQ
+PA_SDQ_Prep <- select(PA_SDQ, ID, Version, SDQ_internalising_problems, SDQ_externalising_problems, SDQ_prosocial)
+
+# Export
+write.csv(PA_SDQ, file = "PA_SDQ.csv")
+
+# Clean enviorment 
+rm(PA_SDQ_11to17, PA_SDQ_4to10, SDQ_DROP, SDQ_Names, PA_SDQ)
+
+#### SDQ: Table ####
+#SDQ_TableMeans <- select(PA_SDQ, pemotion, pconduct, phyper, ppeer, pprosoc, pebdtot)
+
+#SDQ_Emotion_Mean <- mean(SDQ_TableMeans$pemotion,na.rm = T)
+#SDQ_Conduct_Mean <- mean(SDQ_TableMeans$pconduct,na.rm = T)
+#SDQ_Hyper_Mean <- mean(SDQ_TableMeans$phyper,na.rm = T)
+#SDQ_Peer_Mean <- mean(SDQ_TableMeans$ppeer,na.rm = T)
+#SDQ_ProSoc_Mean <- mean(SDQ_TableMeans$pprosoc,na.rm = T)
+#SDQ_ebdtot_Mean <- mean(SDQ_TableMeans$pebdtot,na.rm = T)
+
+#SDQ_Mean_Table <- data.frame(SDQ_Emotion_Mean, SDQ_Conduct_Mean, SDQ_Hyper_Mean, SDQ_Peer_Mean, SDQ_ProSoc_Mean, SDQ_ebdtot_Mean, row.names = "Means")
+
+#kable(
+#SDQ_Mean_Table) %>%
+#kable_styling(bootstrap_options = c("striped")) %>%
+#add_header_above(c("SDQ Mean Table" = 7))  %>%
+#column_spec(c(1,2,3,3,5,6), border_right = T, border_left = T, include_thead = T) 
+```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+PAMP Processing:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```{r PAMP Processing}
+PA_PAMP <- select(PA_Survey, ID = ResponseId, consent, contains("pamp"))
+
+PA_PAMP[PA_PAMP=="Strongly disagree"] <- 7
+PA_PAMP[PA_PAMP=="Disagree"] <- 6
+PA_PAMP[PA_PAMP=="Somewhat disagree"] <- 5
+PA_PAMP[PA_PAMP=="Neither agree nor disagree"] <- 4
+PA_PAMP[PA_PAMP=="Somewhat agree"] <- 3
+PA_PAMP[PA_PAMP=="Agree"] <- 2
+PA_PAMP[PA_PAMP=="Strongly agree"] <- 1
+
+PA_PAMP[,3:11] <- sapply(PA_PAMP[,3:11],as.numeric)
+
+PA_PAMP <- PA_PAMP %>% 
+  mutate_at(c("pamp_add"),
+            funs(recode(., "1" = 7, 
+                        '2' = 6,
+                        '3' = 5,
+                        '4' = 4,
+                        '5' = 3,
+                        '6' = 2,
+                        '7' = 1, defaut = NaN)))
+
+# imputation 
+# Craeted a new coloumn that counts the amount of missing data in each row
+PA_PAMP$NACheck <- rowSums(is.na(select(PA_PAMP, starts_with("pamp"))))/ncol(dplyr::select(PA_PAMP, starts_with("pamp")))
+
+# Drop people who are less than 67% 
+PAMP_DROP <- PA_PAMP[PA_PAMP$NACheck > 0.67, ]
+PA_PAMP <- PA_PAMP[PA_PAMP$NACheck <= 0.67, ]
+
+PA_PAMP$pamp1[is.na(PA_PAMP$pamp1)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp2[is.na(PA_PAMP$pamp2)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp3[is.na(PA_PAMP$pamp2)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp4[is.na(PA_PAMP$pamp4)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp5[is.na(PA_PAMP$pamp5)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp6[is.na(PA_PAMP$pamp6)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp7[is.na(PA_PAMP$pamp7)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp8[is.na(PA_PAMP$pamp8)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+PA_PAMP$pamp_add[is.na(PA_PAMP$pamp_add)] <- rowMeans(PA_PAMP[,c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")], na.rm = TRUE)
+
+# Create calculated column
+PA_PAMP <- add_column(PA_PAMP, pamp_toal = rowSums(PA_PAMP[, c("pamp1", "pamp2", "pamp3", "pamp4", "pamp5", "pamp6", "pamp7", "pamp8" ,"pamp_add")]))
+
+# Create prep for PAMP
+PA_PAMP_Prep <- select(PA_PAMP, ID, pamp_toal)
+
+# Export PAMP
+write.csv(PA_PAMP, file = "PA_PAMP.csv")
+
+# Clean enviroment
+rm(PA_PAMP, PAMP_DROP)
+```
+
+```{r Merge data sets}
+# Merge all data sets into
+PA_Final <- merge(PA_Demo, PA_APQ_Prep, by = "ID", all.x = TRUE)
+PA_Final <- merge(PA_Final, PA_SDQ_Prep, by = "ID", all.x = TRUE)
+PA_Final <- merge(PA_Final, PA_PAMP_Prep, by = "ID", all.x = TRUE)
+
+# Double check we don't have duplicate IDs
+duplicated(PA_Final$ID)
+
+# Write final data frame
+write.csv(PA_Final, file = "PA_Final.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

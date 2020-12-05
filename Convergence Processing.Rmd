@@ -1,0 +1,285 @@
+---
+title: "Convergence"
+author: "Bryan"
+date: "10/20/2020"
+output: html_document
+---
+
+This Data Request pulls from 3 Measures: SIDP-IV, PPVT, DERS, CCNES, Emotion Socialization
+The Demographics needed are: Maternal Age, Child Age, Maternal Race/Ethnicity, Maternal Education, Total Family Income
+
+
+```{r setup, include=FALSE}
+# install Packages
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(eeptools)
+```
+
+```{r MasterLists}
+# Empty Global Environment
+rm(list = ls())
+
+# Imports
+UO_MasterList <- read.csv("UO_MasterList.csv")
+UPMC_MasterList <- read.csv("UPMC_MasterList.csv")
+
+# Filter UO Master List by Group assignment (New N = 85)
+UO_MasterList <- filter(UO_MasterList, Group_Assignment == "Assigned Group 1 (DBT)" |
+                   Group_Assignment == "Assigned Group 2 (FSU)" |
+                   Group_Assignment == "Assigned Group 3 (HC)")
+
+# Filter UO Master List by Eligibility Status (New N = 84)
+UO_MasterList <- filter(UO_MasterList, Eligibility_Status == "enrolled")
+
+# Recode UPMC Group Assignment to match ours
+UPMC_MasterList[UPMC_MasterList == "DBT"] <- "Assigned Group 1 (DBT)"
+UPMC_MasterList[UPMC_MasterList == "NO DBT"] <- "Assigned Group 2 (FSU)" 
+UPMC_MasterList[UPMC_MasterList == "Healthy"] <- "Assigned Group 3 (HC)"
+
+# Clean environment 
+rm(UPMC_IDs, UO_IDs)
+```
+
+```{r Age Calc}
+#### Age Calc for UO ####
+# Filter out all NAs in date columns so we can calc age at T1 AND age at intake
+UO_Intake_Age <- filter(UO_MasterList, Mom_DOB != "" & Child_DOB != "" & Intake_Date != "")
+UO_T1_Age <- filter(UO_MasterList, Mom_DOB != "" & Child_DOB != "" & T1_Date != "")
+
+# Change the date columns to a Date data type
+UO_Intake_Age$Mom_DOB <- as.Date(UO_Intake_Age$Mom_DOB)
+UO_Intake_Age$Child_DOB <- as.Date(UO_Intake_Age$Child_DOB)
+UO_Intake_Age$Intake_Date <- as.Date(UO_Intake_Age$Intake_Date)
+
+UO_T1_Age$Mom_DOB <- as.Date(UO_T1_Age$Mom_DOB)
+UO_T1_Age$Child_DOB <- as.Date(UO_T1_Age$Child_DOB)
+UO_T1_Age$T1_Date <- as.Date(UO_T1_Age$T1_Date)
+
+# Calculate age at Intake
+UO_Intake_Age$MomAgeAt_Intake_Months <- floor(age_calc(UO_Intake_Age$Mom_DOB, UO_Intake_Age$Intake_Date, units = "months"))
+UO_Intake_Age$MomAgeAt_Intake_Years <- floor(age_calc(UO_Intake_Age$Mom_DOB, UO_Intake_Age$Intake_Date, units = "years"))
+UO_Intake_Age$ChildAgeAt_Intake_Months <- floor(age_calc(UO_Intake_Age$Child_DOB, UO_Intake_Age$Intake_Date, units = "months"))
+UO_Intake_Age$ChildAgeAt_Intake_Years <- floor(age_calc(UO_Intake_Age$Child_DOB, UO_Intake_Age$Intake_Date, units = "years"))
+
+# Calculate age at T1
+UO_T1_Age$MomAgeAt_T1_Months <- floor(age_calc(UO_T1_Age$Mom_DOB, UO_T1_Age$T1_Date, units = "months"))
+UO_T1_Age$MomAgeAt_T1_Years <- floor(age_calc(UO_T1_Age$Mom_DOB, UO_T1_Age$T1_Date, units = "years"))
+UO_T1_Age$ChildAgeAt_T1_Months <- floor(age_calc(UO_T1_Age$Child_DOB, UO_T1_Age$T1_Date, units = "months"))
+UO_T1_Age$ChildAgeAt_T1_Years <- floor(age_calc(UO_T1_Age$Child_DOB, UO_T1_Age$T1_Date, units = "years"))
+
+# Edit AgePrep Sheet to merge with rest of Master sheet
+UO_Intake_Age <- select(UO_Intake_Age, FamID, MomAgeAt_Intake_Months, MomAgeAt_Intake_Years, ChildAgeAt_Intake_Months, ChildAgeAt_Intake_Years)
+UO_T1_Age <- select(UO_T1_Age, FamID, MomAgeAt_T1_Months, MomAgeAt_T1_Years, ChildAgeAt_T1_Months, ChildAgeAt_T1_Years)
+
+# Merge Age prep back with MasterList
+UO_MasterList <- merge(UO_MasterList, UO_Intake_Age, by = "FamID", all.x = TRUE)
+UO_MasterList <- merge(UO_MasterList, UO_T1_Age, by = "FamID", all.x = TRUE)
+
+# Get rid of identifiable columns 
+UO_MasterList <- select(UO_MasterList, -c(Eligibility_Status, Mom_DOB, Child_DOB, T1_Date, Intake_Date))
+ 
+# Clean global enviroment
+rm(UO_Intake_Age, UO_T1_Age)
+
+#### Age Calc for UPMC ####
+# Filter out all NAs in date columns so we can calc age at T1 AND age at intake
+UPMC_Intake_Age <- filter(UPMC_MasterList, Mom_DOB != "" & Child_DOB != "" & Intake_Date != "")
+UPMC_T1_Age <- filter(UPMC_MasterList, Mom_DOB != "" & Child_DOB != "" & T1_Date != "")
+
+# Change the date columns to a Date data type
+UPMC_Intake_Age$Mom_DOB <- as.Date(UPMC_Intake_Age$Mom_DOB)
+UPMC_Intake_Age$Child_DOB <- as.Date(UPMC_Intake_Age$Child_DOB)
+UPMC_Intake_Age$Intake_Date <- as.Date(UPMC_Intake_Age$Intake_Date)
+
+UPMC_T1_Age$Mom_DOB <- as.Date(UPMC_T1_Age$Mom_DOB)
+UPMC_T1_Age$Child_DOB <- as.Date(UPMC_T1_Age$Child_DOB)
+UPMC_T1_Age$T1_Date <- as.Date(UPMC_T1_Age$T1_Date)
+
+# Calculate age at Intake
+UPMC_Intake_Age$MomAgeAt_Intake_Months <- floor(age_calc(UPMC_Intake_Age$Mom_DOB, UPMC_Intake_Age$Intake_Date, units = "months"))
+UPMC_Intake_Age$MomAgeAt_Intake_Years <- floor(age_calc(UPMC_Intake_Age$Mom_DOB, UPMC_Intake_Age$Intake_Date, units = "years"))
+UPMC_Intake_Age$ChildAgeAt_Intake_Months <- floor(age_calc(UPMC_Intake_Age$Child_DOB, UPMC_Intake_Age$Intake_Date, units = "months"))
+UPMC_Intake_Age$ChildAgeAt_Intake_Years <- floor(age_calc(UPMC_Intake_Age$Child_DOB, UPMC_Intake_Age$Intake_Date, units = "years"))
+
+# Calculate age at T1
+UPMC_T1_Age$MomAgeAt_T1_Months <- floor(age_calc(UPMC_T1_Age$Mom_DOB, UPMC_T1_Age$T1_Date, units = "months"))
+UPMC_T1_Age$MomAgeAt_T1_Years <- floor(age_calc(UPMC_T1_Age$Mom_DOB, UPMC_T1_Age$T1_Date, units = "years"))
+UPMC_T1_Age$ChildAgeAt_T1_Months <- floor(age_calc(UPMC_T1_Age$Child_DOB, UPMC_T1_Age$T1_Date, units = "months"))
+UPMC_T1_Age$ChildAgeAt_T1_Years <- floor(age_calc(UPMC_T1_Age$Child_DOB, UPMC_T1_Age$T1_Date, units = "years"))
+
+# Edit AgePrep Sheet to merge with rest of Master sheet
+UPMC_Intake_Age <- select(UPMC_Intake_Age, FamID, MomAgeAt_Intake_Months, MomAgeAt_Intake_Years, ChildAgeAt_Intake_Months, ChildAgeAt_Intake_Years)
+UPMC_T1_Age <- select(UPMC_T1_Age, FamID, MomAgeAt_T1_Months, MomAgeAt_T1_Years, ChildAgeAt_T1_Months, ChildAgeAt_T1_Years)
+
+# Merge Age prep back with MasterList
+UPMC_MasterList <- merge(UPMC_MasterList, UPMC_Intake_Age, by = "FamID", all.x = TRUE)
+UPMC_MasterList <- merge(UPMC_MasterList, UPMC_T1_Age, by = "FamID", all.x = TRUE)
+
+# Get rid of identifiable columns 
+UPMC_MasterList <- select(UPMC_MasterList, -c(Mom_DOB, Child_DOB, T1_Date, Intake_Date))
+
+# Clean global enviroment
+rm(UPMC_Intake_Age, UPMC_T1_Age)
+
+```
+
+```{r UO Demographics}
+# Import excel sheets
+UO_Demographics <- read.csv("UO_Demographics.csv", stringsAsFactors = FALSE)
+UO_Demographics_2 <- read.csv("UO_Demographics_2.csv", stringsAsFactors = FALSE)
+
+# Select only the necessary coloumns 
+UO_Demographics <- select(UO_Demographics, FamID = Q144, Mom_Race = Q2, Family_Income = Q71, Maternal_Edu = Q58_1)
+UO_Demographics_2 <- select(UO_Demographics_2, FamID = Q150, Mom_Race = Q152, Maternal_Edu = Q206_1, Family_Income = Q216,)
+
+# Bind both UO demo in one
+UO_Demographics <- rbind(UO_Demographics, UO_Demographics_2)
+
+# Left Merge Demo to UO_MasterList 
+UO_MasterList <- merge(UO_MasterList, UO_Demographics, by = "FamID", all.x = TRUE)
+
+# Reorder Columns 
+UO_MasterList <- UO_MasterList[c(1,2,4,5,6,7,8,9,10,11,12,3,14,13)]
+
+# Clean global enviroment
+rm(UO_Demographics, UO_Demographics_2)
+
+```
+
+```{r UPMC Demographics}
+# Import excel sheets
+UPMC_Demographics <- read.csv("UPMC_Demographics.csv", stringsAsFactors = FALSE)
+
+# Recoding UPMC income to ranges
+UPMC_Demographics$Family_Income <- cut(UPMC_Demographics$Family_Income, c(0, 22310, 30044, 37777, 45510, 53243, 60976, 68709, 76442, Inf),
+                             c("$22,310 or less", "Between $22,311 and $30,044", "Between $30,045 and $37,777", "Between $37,778 and $45,510",
+                               "Between $45,511 and $53,243", "Between $53,244 and $60,976", "Between $60,977 and $68,709",
+                               "Between $68,710 and $76,442", "More than $76,442"))
+# Recoding Maternal Education
+UPMC_Demographics[UPMC_Demographics == 1] <- "Less than 8th grade"; 
+UPMC_Demographics[UPMC_Demographics == 2] <- "8th grade";
+UPMC_Demographics[UPMC_Demographics == 3] <- "Some high school";
+UPMC_Demographics[UPMC_Demographics == 4] <- "GED";
+UPMC_Demographics[UPMC_Demographics == 5] <- "H.S. graduate";
+UPMC_Demographics[UPMC_Demographics == 6] <- "Associate's Degree or diploma";
+UPMC_Demographics[UPMC_Demographics == 7] <- "Tech./Prof. School";
+UPMC_Demographics[UPMC_Demographics == 8] <- "Some college";
+UPMC_Demographics[UPMC_Demographics == 9] <- "College/Univ. graduate";
+UPMC_Demographics[UPMC_Demographics == 10] <- "Some graduate school";
+UPMC_Demographics[UPMC_Demographics == 11] <- "Masters Degree";
+UPMC_Demographics[UPMC_Demographics == 12] <- "Doctorate"
+
+# Left Merge Demo to UPMC_MasterList 
+UPMC_MasterList <- merge(UPMC_MasterList, UPMC_Demographics, by = "FamID", all.x = TRUE)
+
+# Reorder Columns 
+UPMC_MasterList <- UPMC_MasterList[c(1,2,5,6,7,8,9,10,11,12,3,4,13,14)]
+
+# Bind both MasterLists into one 
+Convergence_Final <- rbind(UO_MasterList, UPMC_MasterList)
+
+# Recoding Race and Ethnicity
+Convergence_Final <- Convergence_Final %>%
+  mutate(Mom_Race = ifelse(Mom_Race == "European American or White", "White",  
+                           ifelse(Mom_Race == "White", "White",
+                           ifelse(Mom_Race == "Latino(a) or Hispanic", "LatHisp",
+                           ifelse(Mom_Race == "African-American or Black", "AfAm",
+                           ifelse(Mom_Race == "Black or African American", "AfAm",
+                           ifelse(Mom_Race == "Other", "Multiracial",
+                           ifelse(Mom_Race == "NA", "NA","Multiracial"))))))))
+
+Convergence_Final <- Convergence_Final %>%
+  mutate(Mom_Ethnicity = ifelse(Mom_Ethnicity == "NOT Hispanic or Latino", "not hispanic/latino(a)",
+                                ifelse(Mom_Ethnicity == "not hispanic/latino(a)", "not hispanic/latino(a)",
+                                ifelse(Mom_Ethnicity == "not hispanic/latina", "not hispanic/latino(a)",
+                                ifelse(Mom_Ethnicity == "hispanic/latino(a)", "hispanic/latino(a)",
+                                ifelse(Mom_Ethnicity == "hispanic/latina", "hispanic/latino(a)",
+                                ifelse(Mom_Ethnicity == "Hispanic or Latino", "hispanic/latino(a)","Not Reported")))))))
+
+# Clean global enviroment
+rm(UO_MasterList, UPMC_MasterList, UPMC_Demographics)
+
+```
+
+```{r PPVT}
+# Import PPVT
+PPVT  <- read.csv("PPVT.csv")
+
+# Recode REDcap event name 
+PPVT[PPVT == "clinical_intake_arm_1"] <- "Mom"; 
+PPVT[PPVT == "time_1_arm_1"] <- "Child";
+
+# Rename and select columns in Raw Export
+PPVT_Mom <- select(PPVT, FamID = fam_id, Participant = redcap_event_name, om_ppvt_rs, om_ppvt_ss, om_ppvt_notes)
+PPVT_Child <- select(PPVT, FamID = fam_id, Participant = redcap_event_name, oc_ppvt_rs, oc_ppvt_ss, oc_ppvt_notes)
+
+# Split Mom from child 
+PPVT_Mom <- filter(PPVT_Mom, Participant == "Mom")
+PPVT_Child <- filter(PPVT_Child, Participant == "Child")
+
+# Merge PPVT Data to ID List 
+Convergence_Final <- merge(Convergence_Final, PPVT_Mom, by = "FamID", all.x = TRUE)
+Convergence_Final <- merge(Convergence_Final, PPVT_Child, by = "FamID", all.x = TRUE)
+
+# Calculate mean and STD of Mother PPVT
+PPVT_Mom <- select(Convergence_Final, FamID, om_ppvt_ss)
+PPVT_Child <- select(Convergence_Final, FamID, oc_ppvt_ss)
+
+PPVT_Mom_Mean <- mean(na.omit(PPVT_Mom$om_ppvt_ss))
+PPVT_Mom_STD <- sd(na.omit(PPVT_Mom$om_ppvt_ss))
+PPVT_Mom_N <- nrow(na.omit(PPVT_Mom))
+
+PPVT_Child_Mean <- mean(na.omit(PPVT_Child$oc_ppvt_ss))
+PPVT_Child_STD <- sd(na.omit(PPVT_Child$oc_ppvt_ss))
+PPVT_Child_N <- nrow(na.omit(PPVT_Child))
+
+# Clean environment 
+#rm(PPVT, UO_MasterList, UPMC_MasterList, PPVT_Child, PPVT_Child_Mean, PPVT_Child_N, PPVT_Mom, #PPVT_Mom_Mean, PPVT_Child_STD, PPVT_Mom_N, PPVT_Mom_STD)
+
+```
+
+```{r SIDP}
+# SIDP --------------------------------------------------------------------
+# Import
+UO_SIDP <- read.csv("Convergence_Measures/UO_SIDP.csv", stringsAsFactors = FALSE)
+UPMC_SIDP <- read.csv("Convergence_Measures/UPMC_SIDP.csv", stringsAsFactors = FALSE)
+
+# Bind Data SIDPs
+SIDP <- rbind(UO_SIDP, UPMC_SIDP)
+
+# Select boarderline items
+SIDP <- select(SIDP, FamID, contains("brd"))
+
+# Turn 99 into NAs
+SIDP[SIDP == 99] <- NA; 
+
+SIDP <- add_column(SIDP, SIDP_brd_total = rowSums(SIDP[, c(2,3,4,5,6,7,8,9.10)], na.rm = TRUE))
+
+Convergence_Final <- merge(Convergence_Final, SIDP, by = "FamID", all.x = TRUE)
+
+rm(SIDP, UO_SIDP, UPMC_SIDP)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

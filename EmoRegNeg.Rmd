@@ -1,0 +1,310 @@
+---
+title: "EmoRegNeg"
+author: "Bryan"
+date: "9/16/2020"
+output: html_document
+---
+
+```{r Setup, include=FALSE}
+# Import all dependencies needed
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(irr)
+```
+
+```{r Imports}
+# Clears Everything in Environment
+rm(list = ls())
+
+# Import all Data needed:
+UO_MasterList <- read.csv("UO_MasterList.csv")
+UPMC_MasterList <- read.csv("UPMC_MasterList.csv")
+UO_Demo1 <- read.csv("UO_Demo1.csv")
+UO_Demo2 <- read.csv("UO_Demo2.csv")
+UPMC_Demo <- read.csv("UPMC_Demo.csv")
+BothSite_T1_LegoTask <- read.csv("T1_BothSite_LegoTask.csv")
+UO_T1_Survey <- read.csv("UO_T1_Survey.csv")
+UPMC_T1_CBCL <- read.csv("UPMC_T1_CBCL.csv")
+UPMC_T1_DERS <- read.csv("UPMC_T1_DERS.csv")
+  
+```
+
+```{r Master List and Demographics}
+#### UO Master List ####
+# Filter UO's Master list by group assignment. Target Number is 85.
+UO_MasterList <- UO_MasterList %>% 
+  select(FamID, Group_Assignment, Mom_Age_Years, Mom_Age_Months, Child_Age_Years, Child_Age_Months, Mom_Race,
+         Mom_Ethnicity, Child_Race, Child_Ethnicity) %>% 
+  filter(Group_Assignment == "Assigned Group 1 (DBT)"
+         | Group_Assignment == "Assigned Group 2 (FSU)"
+         | Group_Assignment == "Assigned Group 3 (HC)")
+
+# Combine the two UO_Demo data frames into one
+UO_Demo1 <- select(UO_Demo1, FamID, Mom_Edu = Q58_1, Family_Income = Q71)
+UO_Demo2 <- select(UO_Demo2, FamID, Mom_Edu = Q206_1, Family_Income = Q216)
+UO_Demo <- rbind(UO_Demo1, UO_Demo2)
+
+# Merge UO_Demo with Master list
+UO_MasterList <- merge(UO_MasterList, UO_Demo, by = "FamID", all.x = TRUE)
+
+#### UPMC Master List  ####
+# UPMC's Master List is already filtered but recoding is needed so that the group assignment matches ours
+UPMC_MasterList[UPMC_MasterList == "DBT"] <- "Assigned Group 1 (DBT)"; 
+UPMC_MasterList[UPMC_MasterList == "NO DBT"] <- "Assigned Group 2 (FSU)";
+UPMC_MasterList[UPMC_MasterList == "Healthy"] <- "Assigned Group 3 (HC)"
+
+# Add Demographics to UPMC_MasterList
+UPMC_Demo <- select(UPMC_Demo, FamID, Mom_Age_Years, Mom_Age_Months, Child_Age_Years, Child_Age_Months, Mom_Race, Mom_Ethnicity, Child_Race, Child_Ethnicity, Mom_Edu, Family_Income)
+
+UPMC_MasterList <- merge(UPMC_MasterList, UPMC_Demo, by = "FamID", all.x = TRUE)
+
+# Recoding Maternal Education
+UPMC_MasterList <- UPMC_MasterList %>%
+  mutate(Mom_Edu = ifelse(Mom_Edu == "1", "Less than 8th grade",  
+                           ifelse(Mom_Edu == "2", "8th grade",
+                           ifelse(Mom_Edu == "3", "Some high school",
+                           ifelse(Mom_Edu == "4", "GED",
+                           ifelse(Mom_Edu == "5", "H.S. graduate",
+                           ifelse(Mom_Edu == "6", "Associate's Degree or diploma",
+                           ifelse(Mom_Edu == "7", "Tech./Prof. School",
+                           ifelse(Mom_Edu == "8", "Some college",
+                           ifelse(Mom_Edu == "9", "College/Univ. graduate",
+                           ifelse(Mom_Edu == "10", "Some graduate school",
+                           ifelse(Mom_Edu == "11", "Masters Degree",
+                           ifelse(Mom_Edu == "12", "Doctorate", "NA")))))))))))))
+
+# Merge both Master Lists into One
+MasterList <- rbind(UO_MasterList, UPMC_MasterList)
+
+# Remove Site Specific Master Lists from Enviroment
+rm(UO_MasterList, UPMC_MasterList, UO_Demo, UO_Demo1, UO_Demo2, UPMC_Demo)
+```
+
+```{r CBCL}
+# Extract the CBCL from the UO T1 Survey
+UO_T1_CBCL <- select(UO_T1_Survey, FamID, contains("cbcl"))
+
+# Extract the CBCL from the T1 Survey
+UPMC_T1_CBCL <- select(UPMC_T1_CBCL, FamID, contains("cbcl"))
+
+# Bind both sites CBCLs 
+BothSite_T1_CBCL <- rbind(UO_T1_CBCL, UPMC_T1_CBCL)
+
+# Recode Text to Numbers
+BothSite_T1_CBCL[BothSite_T1_CBCL == "Not True (as far as you know)"] <- 0; 
+BothSite_T1_CBCL[BothSite_T1_CBCL == "Somewhat or Sometimes True"] <- 1;
+BothSite_T1_CBCL[BothSite_T1_CBCL == "Very True or Often True"] <- 2
+
+# Make cbcl items numeric 
+BothSite_T1_CBCL[,2:101] <- sapply(BothSite_T1_CBCL[,2:101],as.numeric)
+
+# Create Subscles
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_er = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_021", "srm_cbcl_046", "srm_cbcl_051", "srm_cbcl_079", "srm_cbcl_082", "srm_cbcl_083", "srm_cbcl_092", "srm_cbcl_097", "srm_cbcl_099")]),.after = "srm_cbcl_100")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_ad = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_010", "srm_cbcl_033", "srm_cbcl_037", "srm_cbcl_043", "srm_cbcl_047", "srm_cbcl_068", "srm_cbcl_087", "srm_cbcl_090")]),.after = "cbcl_er")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_sc = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_001", "srm_cbcl_007", "srm_cbcl_012", "srm_cbcl_019", "srm_cbcl_024", "srm_cbcl_039", "srm_cbcl_045", "srm_cbcl_052", "srm_cbcl_078", "srm_cbcl_086", "srm_cbcl_093")]),.after = "cbcl_ad")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_w = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_002", "srm_cbcl_004", "srm_cbcl_023", "srm_cbcl_062", "srm_cbcl_100", "srm_cbcl_070", "srm_cbcl_071", "srm_cbcl_098")]),.after = "cbcl_sc")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_sp = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_022", "srm_cbcl_038", "srm_cbcl_048", "srm_cbcl_064", "srm_cbcl_074", "srm_cbcl_084")]),.after = "cbcl_w")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_ap = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_005", "srm_cbcl_006", "srm_cbcl_056", "srm_cbcl_059", "srm_cbcl_095")]),.after = "cbcl_sp")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_ab = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_008", "srm_cbcl_015", "srm_cbcl_016", "srm_cbcl_018", "srm_cbcl_020", "srm_cbcl_027", "srm_cbcl_029", "srm_cbcl_035", "srm_cbcl_040", "srm_cbcl_042", "srm_cbcl_044", "srm_cbcl_053", "srm_cbcl_058", "srm_cbcl_066", "srm_cbcl_069", "srm_cbcl_081", "srm_cbcl_085", "srm_cbcl_088", "srm_cbcl_096")]),.after = "cbcl_ap")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_op = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_003", "srm_cbcl_009", "srm_cbcl_011", "srm_cbcl_013", "srm_cbcl_014", "srm_cbcl_017", "srm_cbcl_025", "srm_cbcl_026", "srm_cbcl_028", "srm_cbcl_030", "srm_cbcl_031", "srm_cbcl_032", "srm_cbcl_034", "srm_cbcl_036", "srm_cbcl_041", "srm_cbcl_049", "srm_cbcl_050", "srm_cbcl_054", "srm_cbcl_055", "srm_cbcl_057", "srm_cbcl_060", "srm_cbcl_061", "srm_cbcl_063", "srm_cbcl_065", "srm_cbcl_072", "srm_cbcl_073", "srm_cbcl_075", "srm_cbcl_076", "srm_cbcl_077", "srm_cbcl_080", "srm_cbcl_089", "srm_cbcl_091", "srm_cbcl_094")]),.after = "cbcl_ab")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_int = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_021", "srm_cbcl_046", "srm_cbcl_051", "srm_cbcl_079", "srm_cbcl_082", "srm_cbcl_083", "srm_cbcl_092", "srm_cbcl_097", "srm_cbcl_099", "srm_cbcl_010", "srm_cbcl_033", "srm_cbcl_037", "srm_cbcl_043", "srm_cbcl_047", "srm_cbcl_068", "srm_cbcl_087", "srm_cbcl_090", "srm_cbcl_001", "srm_cbcl_007", "srm_cbcl_012", "srm_cbcl_019", "srm_cbcl_024", "srm_cbcl_039", "srm_cbcl_045", "srm_cbcl_052", "srm_cbcl_078", "srm_cbcl_086", "srm_cbcl_093", "srm_cbcl_002", "srm_cbcl_004", "srm_cbcl_023", "srm_cbcl_062", "srm_cbcl_067", "srm_cbcl_070", "srm_cbcl_071", "srm_cbcl_098")]),.after = "cbcl_op")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_ext = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_005", "srm_cbcl_006", "srm_cbcl_056", "srm_cbcl_059", "srm_cbcl_095", "srm_cbcl_008", "srm_cbcl_015", "srm_cbcl_016", "srm_cbcl_018", "srm_cbcl_020", "srm_cbcl_027", "srm_cbcl_029", "srm_cbcl_035", "srm_cbcl_040", "srm_cbcl_042", "srm_cbcl_044", "srm_cbcl_053", "srm_cbcl_058", "srm_cbcl_066", "srm_cbcl_069", "srm_cbcl_081", "srm_cbcl_085", "srm_cbcl_088", "srm_cbcl_096")]),.after = "cbcl_int")
+
+BothSite_T1_CBCL <- add_column(BothSite_T1_CBCL, cbcl_total = rowSums(BothSite_T1_CBCL[, c("srm_cbcl_001", "srm_cbcl_002", "srm_cbcl_003", "srm_cbcl_004", "srm_cbcl_005", "srm_cbcl_006", "srm_cbcl_007", "srm_cbcl_008", "srm_cbcl_009", "srm_cbcl_010", "srm_cbcl_011", "srm_cbcl_012", "srm_cbcl_013", "srm_cbcl_014", "srm_cbcl_015", "srm_cbcl_016", "srm_cbcl_017", "srm_cbcl_018", "srm_cbcl_019", "srm_cbcl_020", "srm_cbcl_021", "srm_cbcl_022", "srm_cbcl_023", "srm_cbcl_024", "srm_cbcl_025", "srm_cbcl_026", "srm_cbcl_027", "srm_cbcl_028", "srm_cbcl_029", "srm_cbcl_030", "srm_cbcl_031", "srm_cbcl_032", "srm_cbcl_033", "srm_cbcl_034", "srm_cbcl_035", "srm_cbcl_036", "srm_cbcl_037", "srm_cbcl_038", "srm_cbcl_039", "srm_cbcl_040", "srm_cbcl_041", "srm_cbcl_042", "srm_cbcl_043", "srm_cbcl_044", "srm_cbcl_045", "srm_cbcl_046", "srm_cbcl_047", "srm_cbcl_048", "srm_cbcl_049", "srm_cbcl_050", "srm_cbcl_051", "srm_cbcl_052", "srm_cbcl_053", "srm_cbcl_054", "srm_cbcl_055", "srm_cbcl_056", "srm_cbcl_057", "srm_cbcl_058", "srm_cbcl_059", "srm_cbcl_060", "srm_cbcl_061", "srm_cbcl_062", "srm_cbcl_063", "srm_cbcl_064", "srm_cbcl_065", "srm_cbcl_066", "srm_cbcl_067", "srm_cbcl_068", "srm_cbcl_069", "srm_cbcl_070", "srm_cbcl_071", "srm_cbcl_072", "srm_cbcl_073", "srm_cbcl_074", "srm_cbcl_075", "srm_cbcl_076", "srm_cbcl_077", "srm_cbcl_078", "srm_cbcl_079", "srm_cbcl_080", "srm_cbcl_081", "srm_cbcl_082", "srm_cbcl_083", "srm_cbcl_084", "srm_cbcl_085", "srm_cbcl_086", "srm_cbcl_087", "srm_cbcl_088", "srm_cbcl_089", "srm_cbcl_090", "srm_cbcl_091", "srm_cbcl_092", "srm_cbcl_093", "srm_cbcl_094", "srm_cbcl_095", "srm_cbcl_096", "srm_cbcl_097", "srm_cbcl_098", "srm_cbcl_099")]),.after = "cbcl_ext")
+
+# Merge Subscales into Final sheet
+CBCL_Subscles <- select(BothSite_T1_CBCL, FamID, cbcl_er, cbcl_ad, cbcl_sc, cbcl_w, cbcl_sp, cbcl_ap, cbcl_ab, cbcl_op, cbcl_int, cbcl_ext, cbcl_total)
+
+Final_Data <- merge(MasterList, CBCL_Subscles, By = "FamID", all.x = TRUE)
+
+# Clean enviorment
+rm(BothSite_T1_CBCL, CBCL_Subscles, UPMC_T1_CBCL, UO_T1_CBCL)
+```
+
+```{r DERS}
+# Extract the DERS from the UO T1 Survey
+UO_T1_DERS <- select(UO_T1_Survey, FamID, contains("ders"))
+
+# Extract the DERS from the UPMC_T1_DERS
+UPMC_T1_DERS <- select(UPMC_T1_DERS, FamID, contains("ders"))
+
+# Bind both sites CBCLs 
+BothSite_T1_DERS <- rbind(UO_T1_DERS, UPMC_T1_DERS)
+
+# Recode Text to Numbers
+BothSite_T1_DERS[BothSite_T1_DERS == "Almost Never (0-10%)"] <- 1; 
+BothSite_T1_DERS[BothSite_T1_DERS == "Sometimes (11%-35%)"] <- 2;
+BothSite_T1_DERS[BothSite_T1_DERS == "About half the time (36%-65%)"] <- 3;
+BothSite_T1_DERS[BothSite_T1_DERS == "Most of the time (66-90%)"] <- 4;
+BothSite_T1_DERS[BothSite_T1_DERS == "Almost Always (91-100%)"] <- 5;
+
+# Make cbcl items numeric 
+BothSite_T1_DERS[,2:37] <- sapply(BothSite_T1_DERS[,2:37],as.numeric)
+
+BothSite_T1_DERS <- BothSite_T1_DERS %>% 
+  mutate_at(c("srm_ders_01", "srm_ders_02", "srm_ders_06" , "srm_ders_07" , "srm_ders_08" , "srm_ders_10",
+              "srm_ders_17", "srm_ders_20", "srm_ders_22", "srm_ders_24", "srm_ders_34"),
+            funs(recode(., "1" = 5, 
+                        '2' = 4,
+                        '3' = 3,
+                        '4' = 2,
+                        '5' = 1, defaut = NaN)))
+
+# Rename Reversed Scored Items
+BothSite_T1_DERS <- rename(BothSite_T1_DERS, srm_ders_01r = srm_ders_01, srm_ders_02r = srm_ders_02, srm_ders_06r = srm_ders_06, srm_ders_07r = srm_ders_07, srm_ders_08r = srm_ders_08, srm_ders_10r = srm_ders_10, srm_ders_17r = 
+srm_ders_17, srm_ders_20r = srm_ders_20, srm_ders_22r = srm_ders_22, srm_ders_24r = srm_ders_24, srm_ders_34r = srm_ders_34)
+
+# Create Total Score
+BothSite_T1_DERS <- add_column(BothSite_T1_DERS, ders_total = rowSums(BothSite_T1_DERS[, c("srm_ders_01r", "srm_ders_02r", "srm_ders_03", "srm_ders_04", "srm_ders_05", "srm_ders_06r", "srm_ders_07r", "srm_ders_08r", "srm_ders_09", "srm_ders_10r", "srm_ders_11", "srm_ders_12", "srm_ders_13", "srm_ders_14", "srm_ders_15", "srm_ders_16", "srm_ders_17r", "srm_ders_18", "srm_ders_19", "srm_ders_20r", "srm_ders_21", "srm_ders_22r", "srm_ders_23", "srm_ders_24r", "srm_ders_25", "srm_ders_26", "srm_ders_27", "srm_ders_28", "srm_ders_29", "srm_ders_30", "srm_ders_31", "srm_ders_32", "srm_ders_33", "srm_ders_34r", "srm_ders_35", "srm_ders_36")]))
+
+# Add DERS total to Final sheet
+DERS_total <- select(BothSite_T1_DERS, FamID, ders_total)
+
+Final_Data <- merge(Final_Data, DERS_total, by = "FamID", all.x = TRUE)
+
+# Clean enviroment 
+rm(BothSite_T1_DERS, DERS_total, UO_T1_DERS, UO_T1_Survey, UPMC_T1_DERS)
+
+```
+
+```{r Lego Task}
+# Select all the Maternal Neg scores
+Maternal_Neg <- select(BothSite_T1_LegoTask, FamID, contains("Maternal_Negativit_"))
+
+# Add up all Maternal Neg Scores and append to the end. This is complicated due to the way that REDcap exports this data. Each answer for each EPOCH is represented by a column. So if they select 0 for the negativity score it is recorded as a 1 in that coloumn, so the sum statement below ignores those column. THen there is the matter of the NA and Missing coloumns. If either of these are selected it would be recorded as a 1 so the below syntax first ensures that if the NA or missing coloumn has a 1 in it that it is recoded as a string therefore rending an NA in the sum coloum
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___9", "epoch_1_maternal_negativit____9999", "epoch_2_maternal_negativit___9",
+              "epoch_2_maternal_negativit____9999", "epoch_3_maternal_negativit___9", "epoch_3_maternal_negativit____9999",
+              "epoch_4_maternal_negativit___9", "epoch_4_maternal_negativit____9999", "epoch_5_maternal_negativit___9",
+              "epoch_5_maternal_negativit____9999"), funs(recode(., "1" = "NA", "0" = "0")))
+
+# Recode strings where teh score was 1 to make sure it equals 1
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___1", "epoch_2_maternal_negativit___1", "epoch_3_maternal_negativit___1",
+              "epoch_4_maternal_negativit___1", "epoch_5_maternal_negativit___1"), funs(recode(., "1" = "1", "0" = "0")))
+
+# Recode strings where the score was 2 to make sure it equals 2
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___2", "epoch_2_maternal_negativit___2", "epoch_3_maternal_negativit___2",
+              "epoch_4_maternal_negativit___2", "epoch_5_maternal_negativit___2"), funs(recode(., "1" = "2", "0" = "0")))
+
+# Recode strings where the score was 3 to make sure it equals 3
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___3", "epoch_2_maternal_negativit___3", "epoch_3_maternal_negativit___3",
+              "epoch_4_maternal_negativit___3", "epoch_5_maternal_negativit___3"), funs(recode(., "1" = "3", "0" = "0")))
+
+# Recode strings where the score was 4 to make sure it equals 4
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___4", "epoch_2_maternal_negativit___4", "epoch_3_maternal_negativit___4",
+              "epoch_4_maternal_negativit___4", "epoch_5_maternal_negativit___4"), funs(recode(., "1" = "4", "0" = "0")))
+
+# Recode strings where the score was 5 to make sure it equals 5
+Maternal_Neg <- Maternal_Neg %>% 
+  mutate_at(c("epoch_1_maternal_negativit___5", "epoch_2_maternal_negativit___5", "epoch_3_maternal_negativit___5",
+              "epoch_4_maternal_negativit___5", "epoch_5_maternal_negativit___5"), funs(recode(., "1" = "5", "0" = "0")))
+
+# Make items numeric
+Maternal_Neg[,2:41] <- sapply(Maternal_Neg[,2:41],as.numeric)
+
+# Sum all of the possible sores for each score together
+Maternal_Neg$Mom_Neg_Epoch1 = rowSums(Maternal_Neg[,c(3:7)])
+Maternal_Neg$Mom_Neg_Epoch2 = rowSums(Maternal_Neg[,c(11:15)])
+Maternal_Neg$Mom_Neg_Epoch3 = rowSums(Maternal_Neg[,c(19:23)])
+Maternal_Neg$Mom_Neg_Epoch4 = rowSums(Maternal_Neg[,c(27:31)])
+Maternal_Neg$Mom_Neg_Epoch5 = rowSums(Maternal_Neg[,c(35:39)])
+
+# Average all of the EPOCH scores 
+Maternal_Neg$Mom_Neg_Ave = rowMeans(Maternal_Neg[,c(42:46)])
+
+# Select just the coloumns we need
+Maternal_Neg <- select(Maternal_Neg, FamID, c(, 42:47))
+
+# Append Maternal Neg to the end of the final sheet
+Final_Data <- merge(Final_Data, Maternal_Neg, by = "FamID", all.x = TRUE)
+
+# Add up all Child Neg Scores and append to the end. This is complicated due to the way that REDcap exports this data. Each answer for each EPOCH is represented by a column. So if they select 0 for the negativity score it is recorded as a 1 in that column, so the sum statement below ignores those column. Then there is the matter of the NA and Missing coloumns. If either of these are selected it would be recorded as a 1 so the below syntax first ensures that if the NA or missing coloumn has a 1 in it that it is recoded as a string therefore rending an NA in the sum column
+Child_Neg <- select(BothSite_T1_LegoTask, FamID, contains("child_negativity"))
+
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___9", "epoch_1_child_negativity____9999", "epoch_2_child_negativity___9",
+              "epoch_2_child_negativity____9999", "epoch_3_child_negativity___9", "epoch_3_child_negativity____9999",
+              "epoch_4_child_negativity___9", "epoch_4_child_negativity____9999", "epoch_5_child_negativity___9",
+              "epoch_5_child_negativity____9999"), funs(recode(., "1" = "NA", "0" = "0")))
+
+# Recode strings where the score was 1 to make sure it equals 1
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___1", "epoch_2_child_negativity___1", "epoch_3_child_negativity___1",
+              "epoch_4_child_negativity___1", "epoch_5_child_negativity___1"), funs(recode(., "1" = "1", "0" = "0")))
+
+# Recode strings where the score was 2 to make sure it equals 2
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___2", "epoch_2_child_negativity___2", "epoch_3_child_negativity___2",
+              "epoch_4_child_negativity___2", "epoch_5_child_negativity___2"), funs(recode(., "1" = "2", "0" = "0")))
+
+# Recode strings where the score was 3 to make sure it equals 3
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___3", "epoch_2_child_negativity___3", "epoch_3_child_negativity___3",
+              "epoch_4_child_negativity___3", "epoch_5_child_negativity___3"), funs(recode(., "1" = "3", "0" = "0")))
+
+# Recode strings where the score was 4 to make sure it equals 4
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___4", "epoch_2_child_negativity___4", "epoch_3_child_negativity___4",
+              "epoch_4_child_negativity___4", "epoch_5_child_negativity___4"), funs(recode(., "1" = "4", "0" = "0")))
+
+# Recode strings where the score was 5 to make sure it equals 5
+Child_Neg <- Child_Neg %>% 
+  mutate_at(c("epoch_1_child_negativity___5", "epoch_2_child_negativity___5", "epoch_3_child_negativity___5",
+              "epoch_4_child_negativity___5", "epoch_5_child_negativity___5"), funs(recode(., "1" = "5", "0" = "0")))
+
+# Make items numeric
+Child_Neg[,2:41] <- sapply(Child_Neg[,2:41],as.numeric)
+
+# Sum all of the possible sores for each score together
+Child_Neg$Child_Neg_Epoch1 = rowSums(Child_Neg[,c(3:7)])
+Child_Neg$Child_Neg_Epoch2 = rowSums(Child_Neg[,c(11:15)])
+Child_Neg$Child_Neg_Epoch3 = rowSums(Child_Neg[,c(19:23)])
+Child_Neg$Child_Neg_Epoch4 = rowSums(Child_Neg[,c(27:31)])
+Child_Neg$Child_Neg_Epoch5 = rowSums(Child_Neg[,c(35:39)])
+
+# Average all of the EPOCH scores 
+Child_Neg$Child_Neg_Ave = rowMeans(Child_Neg[,c(42:46)])
+
+# Select just the coloumns we need
+Child_Neg <- select(Child_Neg, FamID, c(, 42:47))
+
+# Append Child Neg to the end of the final sheet
+Final_Data <- merge(Final_Data, Child_Neg, by = "FamID", all.x = TRUE)
+
+```
+
+```{r Export}
+write.csv(Final_Data,"EmoRegNeg_Data/EmoRegNeg_Final.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
