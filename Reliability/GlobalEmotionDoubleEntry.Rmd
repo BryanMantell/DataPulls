@@ -1,0 +1,113 @@
+---
+title: "Global Emotion Coding Double Entry Reliability"
+author: "Bryan"
+date: "4/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Install Packages: List all Packages Needed in the All_Packages Variable
+All_Packages <- c("dplyr")
+New_Packages <- All_Packages[!(All_Packages %in% installed.packages()[,"Package"])]
+if(length(New_Packages)) install.packages(New_Packages)
+
+# Load Packages 
+library(dplyr)
+
+# Empty Global Environment
+rm(list = ls())
+```
+
+```{r Import, Clean, and Merge}
+# Read in Data
+GEB_T1 <- read.csv("GEB_T1.csv")
+
+# Rename Variable Names
+GEB_T1 <- rename(GEB_T1, FamID = fam_id, Timepoint = redcap_event_name, GEBstatus = oc_geb_taskstatus)
+
+# Pool all double scored files into their own Data frame
+GEB_T1_DS <- filter(GEB_T1, grepl("_DS", FamID))
+
+# Isolate just the double scored files that have data for this measure
+GEB_T1_DS <- filter(GEB_T1_DS,!is.na(GEB_T1_DS$GEBstatus))
+
+# Remove the "_DS" From DS IDs
+GEB_T1_DS$FamID <- strsplit(GEB_T1_DS$FamID, "_DS")
+
+# Merge Original with double scored data
+GEB_Compare <- merge(GEB_T1, GEB_T1_DS, by=c("FamID", "Timepoint"))
+
+```
+
+```{r Anger ICCs}
+# Calculate ICC for Anger EPOCHs
+GEB_e1ang <- select(GEB_Compare, oc_geb_e1ang.x, oc_geb_e1ang.y)
+GEB_e1ang_InterR <- icc(GEB_e1ang, model = "twoway", type = "agreement", unit = "single")
+GEB_e1ang_InterR <- GEB_e1ang_InterR$value
+
+GEB_e2ang <- select(GEB_Compare, oc_geb_e2ang.x, oc_geb_e2ang.y)
+GEB_e2ang_InterR <- icc(GEB_e2ang, model = "twoway", type = "agreement", unit = "single")
+GEB_e2ang_InterR <- GEB_e2ang_InterR$value
+
+GEB_e3ang <- select(GEB_Compare, oc_geb_e3ang.x, oc_geb_e3ang.y)
+GEB_e3ang_InterR <- icc(GEB_e3ang, model = "twoway", type = "agreement", unit = "single")
+GEB_e3ang_InterR <- GEB_e3ang_InterR$value
+
+GEB_e4ang <- select(GEB_Compare, oc_geb_e4ang.x, oc_geb_e4ang.y)
+GEB_e4ang_InterR <- icc(GEB_e4ang, model = "twoway", type = "agreement", unit = "single")
+GEB_e4ang_InterR <- GEB_e4ang_InterR$value
+
+# Average ICC for Anger 
+GEB_ANG_InterR <- (GEB_e1ang_InterR + GEB_e2ang_InterR + GEB_e3ang_InterR + GEB_e4ang_InterR)/4
+
+GEB_ANG_InterR
+```
+
+```{r Sad ICCs}
+# Calculate ICC for SAD EPOCHs
+GEB_e1sad <- select(GEB_Compare, oc_geb_e1sad.x, oc_geb_e1sad.y)
+GEB_e1sad_InterR <- icc(GEB_e1sad, model = "twoway", type = "agreement", unit = "single")
+GEB_e1sad_InterR <- GEB_e1sad_InterR$value
+
+GEB_e2sad <- select(GEB_Compare, oc_geb_e2sad.x, oc_geb_e2sad.y)
+GEB_e2sad_InterR <- icc(GEB_e2sad, model = "twoway", type = "agreement", unit = "single")
+GEB_e2sad_InterR <- GEB_e2sad_InterR$value
+
+GEB_e3sad <- select(GEB_Compare, oc_geb_e3sad.x, oc_geb_e3sad.y)
+GEB_e3sad_InterR <- icc(GEB_e3sad, model = "twoway", type = "agreement", unit = "single")
+GEB_e3sad_InterR <- GEB_e3sad_InterR$value
+
+GEB_e4sad <- select(GEB_Compare, oc_geb_e4sad.x, oc_geb_e4sad.y)
+GEB_e4sad_InterR <- icc(GEB_e4sad, model = "twoway", type = "agreement", unit = "single")
+GEB_e4sad_InterR <- GEB_e4sad_InterR$value
+
+# Average ICC for SAD
+GEB_SAD_InterR <- (GEB_e1sad_InterR + GEB_e2sad_InterR + GEB_e3sad_InterR + GEB_e4sad_InterR)/4
+
+GEB_SAD_InterR
+```
+
+```{r Ontask ICCs}
+# Calculate ICC for ontask EPOCHs
+GEB_e1ontask <- select(GEB_Compare, oc_geb_e1ontask.x, oc_geb_e1ontask.y)
+GEB_e1ontask_InterR <- icc(GEB_e1ontask, model = "twoway", type = "agreement", unit = "single")
+GEB_e1ontask_InterR <- GEB_e1ontask_InterR$value
+
+GEB_e2ontask <- select(GEB_Compare, oc_geb_e2ontask.x, oc_geb_e2ontask.y)
+GEB_e2ontask_InterR <- icc(GEB_e2ontask, model = "twoway", type = "agreement", unit = "single")
+GEB_e2ontask_InterR <- GEB_e2ontask_InterR$value
+
+GEB_e3ontask <- select(GEB_Compare, oc_geb_e3ontask.x, oc_geb_e3ontask.y)
+GEB_e3ontask_InterR <- icc(GEB_e3ontask, model = "twoway", type = "agreement", unit = "single")
+GEB_e3ontask_InterR <- GEB_e3ontask_InterR$value
+
+GEB_e4ontask <- select(GEB_Compare, oc_geb_e4ontask.x, oc_geb_e4ontask.y)
+GEB_e4ontask_InterR <- icc(GEB_e4ontask, model = "twoway", type = "agreement", unit = "single")
+GEB_e4ontask_InterR <- GEB_e4ontask_InterR$value
+
+# Average ICC for OnTask
+GEB_ONTASK_InterR <- (GEB_e1ontask_InterR + GEB_e2ontask_InterR + GEB_e3ontask_InterR + GEB_e4ontask_InterR)/4
+
+GEB_ONTASK_InterR
+```
+

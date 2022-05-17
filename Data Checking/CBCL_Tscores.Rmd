@@ -1,0 +1,52 @@
+---
+title: "CBCL T Scores"
+author: "Bryan"
+date: "3/2/2021"
+output: html_document
+---
+
+
+```{r Setup, include=FALSE}
+# install Packages
+library(dplyr)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+
+```
+
+```{r Import}
+# Empty Global Environment
+rm(list = ls())
+
+# Import MasterLists
+CBCL_Subs <- read.csv("CBCL_subs.csv")
+CBCL_Codebook <- read.csv("CBCL_Codebook.csv")
+
+```
+
+```{r Seperate Codebook}
+INT_Tscores <- select(CBCL_Codebook, CBCL_INT_r, CBCL_INT_t)
+INT_Tscores <- INT_Tscores[-c(74:201), ] 
+
+EXT_Tscores <- select(CBCL_Codebook, CBCL_EXT_r, CBCL_EXT_t)
+EXT_Tscores <- EXT_Tscores[-c(50:201), ] 
+
+TOT_Tscores <- select(CBCL_Codebook, CBCL_TOT_r, CBCL_TOT_t)
+
+```
+
+```{r Merge}
+# Merge T scores with next to raw scores
+CBCL_Subs <- merge(CBCL_Subs, INT_Tscores, by = "CBCL_INT_r", all.x = TRUE)
+CBCL_Subs <- merge(CBCL_Subs, EXT_Tscores, by = "CBCL_EXT_r", all.x = TRUE)
+CBCL_Subs <- merge(CBCL_Subs, TOT_Tscores, by = "CBCL_TOT_r", all.x = TRUE)
+
+```
+
+```{r Clean}
+CBCL_Subs <- select(CBCL_Subs, FamID, TimePoint, CBCL_INT_r, CBCL_INT_t, CBCL_EXT_r, CBCL_EXT_t, CBCL_TOT_r, CBCL_TOT_t)
+
+
+```

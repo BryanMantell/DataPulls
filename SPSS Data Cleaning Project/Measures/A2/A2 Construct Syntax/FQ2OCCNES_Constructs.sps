@@ -1,0 +1,299 @@
+﻿* Encoding: UTF-8.
+*STEP 0: NOTES.
+*COPING WITH CHILDREN'S NEGATIVE EMOTIONS SCALE (CCNES).
+*CREATED THE FOLLOWING SUBSCALES & RAN APLHAS; LIST SUBSCALES BELOW (EXAMPLE BELOW).
+*Unsupportive Reactions (UnSup).
+*Supportive Reactions (Sup).
+*Distress Reactions (DR).
+*Punitive Reactions (PR).
+*Expressive Encouragement (EE).
+*Emotion-Focused Reactions (EFR).
+*Problem-Focused Reactions (PFR).
+*Minimization Reactions (MR).
+
+*03-09-22(BM): Adapted Syntax for A2
+*03-09-22(AAC): Checked. Added alphas to syntax.
+
+*--------------------------------------------------------------------------------------------------------------------------------.
+*STEP 1: OPENING CLEANED DATA.
+*Insert the correct file path and file name. Use syntax to open cleaned data file.
+GET
+  FILE='/Users/alexisadams-clark/Desktop/DBT Moms data management/FQ2OCCNES_Cleaned.sav'.
+
+*STEP 2: SAVING CLEANED DATA AS A CONSTRUCT FILE. 
+*Insert the correct file path and file name.
+SAVE OUTFILE='/Users/alexisadams-clark/Desktop/DBT Moms data management/FQ2OCCNES_Constructs.sav'
+  /COMPRESSED.
+
+*STEP 3: DESCRIPTIVE STATISTICS (1. FREQ AND 2. CORR) FOR RAW VARIABLES (TOTAL SCORE 1ST, THEN SUBSCALES).
+*When running this step note any additional missingness (any other codes) that are not accounted for in the STAT variable. These missing codes (and corresponding IDs) will need to be 
+incorporated in STEP 8 below.
+FREQ VARS=FQ2OCCNES01A FQ2OCCNES01B FQ2OCCNES01C FQ2OCCNES01D FQ2OCCNES01E FQ2OCCNES01F
+FQ2OCCNES02AR FQ2OCCNES02B FQ2OCCNES02C FQ2OCCNES02D FQ2OCCNES02E FQ2OCCNES02F 
+FQ2OCCNES03A FQ2OCCNES03B FQ2OCCNES03C FQ2OCCNES03D FQ2OCCNES03E FQ2OCCNES03F
+FQ2OCCNES04A FQ2OCCNES04B FQ2OCCNES04C FQ2OCCNES04D FQ2OCCNES04E FQ2OCCNES04F 
+FQ2OCCNES05A FQ2OCCNES05B FQ2OCCNES05C FQ2OCCNES05D FQ2OCCNES05E FQ2OCCNES05F
+FQ2OCCNES06A FQ2OCCNES06B FQ2OCCNES06C FQ2OCCNES06D FQ2OCCNES06E FQ2OCCNES06F
+FQ2OCCNES07A FQ2OCCNES07B FQ2OCCNES07CR FQ2OCCNES07D FQ2OCCNES07E FQ2OCCNES07F
+FQ2OCCNES08A FQ2OCCNES08B FQ2OCCNES08CR FQ2OCCNES08D FQ2OCCNES08E FQ2OCCNES08F
+FQ2OCCNES09A FQ2OCCNES09B FQ2OCCNES09C FQ2OCCNES09D FQ2OCCNES09E FQ2OCCNES09F
+FQ2OCCNES10AR FQ2OCCNES10B FQ2OCCNES10C FQ2OCCNES10D FQ2OCCNES10E FQ2OCCNES10F 
+FQ2OCCNES11A FQ2OCCNES11B FQ2OCCNES11C FQ2OCCNES11D FQ2OCCNES11E FQ2OCCNES11F
+FQ2OCCNES12A FQ2OCCNES12B FQ2OCCNES12C FQ2OCCNES12D FQ2OCCNES12E FQ2OCCNES12F.
+*Unsupportive Reactions (UnSup).
+CORR VARS=FQ2OCCNES01D, FQ2OCCNES02C, FQ2OCCNES03B, FQ2OCCNES04C, FQ2OCCNES05C, FQ2OCCNES06B, FQ2OCCNES07D, FQ2OCCNES08D, FQ2OCCNES09C, FQ2OCCNES10F, FQ2OCCNES11A, FQ2OCCNES12F, 
+FQ2OCCNES01A, FQ2OCCNES02F, FQ2OCCNES03F, FQ2OCCNES04A, FQ2OCCNES05D, FQ2OCCNES06D, FQ2OCCNES07E, FQ2OCCNES08E, FQ2OCCNES09E, FQ2OCCNES10B, FQ2OCCNES11C, FQ2OCCNES12E, 
+FQ2OCCNES01B, FQ2OCCNES02AR, FQ2OCCNES03A, FQ2OCCNES04D, FQ2OCCNES05E, FQ2OCCNES06C, FQ2OCCNES07CR, FQ2OCCNES08CR, FQ2OCCNES09B, FQ2OCCNES10AR, FQ2OCCNES11B, FQ2OCCNES12D.
+*Minimization Reactions (MR).
+CORR VARS=FQ2OCCNES01D, FQ2OCCNES02C, FQ2OCCNES03B, FQ2OCCNES04C, FQ2OCCNES05C, FQ2OCCNES06B, FQ2OCCNES07D, FQ2OCCNES08D, FQ2OCCNES09C, FQ2OCCNES10F, FQ2OCCNES11A, FQ2OCCNES12F.
+*Punitive Reactions (PR).
+CORR VARS=FQ2OCCNES01A, FQ2OCCNES02F, FQ2OCCNES03F, FQ2OCCNES04A, FQ2OCCNES05D, FQ2OCCNES06D, FQ2OCCNES07E, FQ2OCCNES08E, FQ2OCCNES09E, FQ2OCCNES10B, FQ2OCCNES11C, FQ2OCCNES12E.
+*Distress Reactions (DR).
+CORR VARS=FQ2OCCNES01B, FQ2OCCNES02AR, FQ2OCCNES03A, FQ2OCCNES04D, FQ2OCCNES05E, FQ2OCCNES06C, FQ2OCCNES07CR, FQ2OCCNES08CR, FQ2OCCNES09B, FQ2OCCNES10AR, FQ2OCCNES11B, FQ2OCCNES12D.
+
+*Supportive Reactions (Sup).
+CORR VARS=FQ2OCCNES01E, FQ2OCCNES02E, FQ2OCCNES03E, FQ2OCCNES04B, FQ2OCCNES05F, FQ2OCCNES06E, FQ2OCCNES07F, FQ2OCCNES08A, FQ2OCCNES09A, FQ2OCCNES10C, FQ2OCCNES11F, FQ2OCCNES12B,
+FQ2OCCNES01F, FQ2OCCNES02B, FQ2OCCNES03D, FQ2OCCNES04E, FQ2OCCNES05A, FQ2OCCNES06A, FQ2OCCNES07B, FQ2OCCNES08F, FQ2OCCNES09F, FQ2OCCNES10D, FQ2OCCNES11E, FQ2OCCNES12C,
+FQ2OCCNES01C, FQ2OCCNES02D, FQ2OCCNES03C, FQ2OCCNES04F, FQ2OCCNES05B, FQ2OCCNES06F, FQ2OCCNES07A, FQ2OCCNES08B, FQ2OCCNES09D, FQ2OCCNES10E, FQ2OCCNES11D, FQ2OCCNES12A.
+*Expressive Encouragement (EE).
+CORR VARS=FQ2OCCNES01E, FQ2OCCNES02E, FQ2OCCNES03E, FQ2OCCNES04B, FQ2OCCNES05F, FQ2OCCNES06E, FQ2OCCNES07F, FQ2OCCNES08A, FQ2OCCNES09A, FQ2OCCNES10C, FQ2OCCNES11F, FQ2OCCNES12B.
+*Emotion-Focused Reactions (EFR).
+CORR VARS=FQ2OCCNES01F, FQ2OCCNES02B, FQ2OCCNES03D, FQ2OCCNES04E, FQ2OCCNES05A, FQ2OCCNES06A, FQ2OCCNES07B, FQ2OCCNES08F, FQ2OCCNES09F, FQ2OCCNES10D, FQ2OCCNES11E, FQ2OCCNES12C.
+*Problem-Focused Reactions (PFR).
+CORR VARS=FQ2OCCNES01C, FQ2OCCNES02D, FQ2OCCNES03C, FQ2OCCNES04F, FQ2OCCNES05B, FQ2OCCNES06F, FQ2OCCNES07A, FQ2OCCNES08B, FQ2OCCNES09D, FQ2OCCNES10E, FQ2OCCNES11D, FQ2OCCNES12A.
+
+*STEP 4: RECODING MISSING VALUES.
+RECODE FQ2OCCNES01A TO FQ2OCCNES12F (MISSING=-9999).
+EXECUTE.
+
+*STEP 5: RELIABILITY STATISTICS (TOTAL SCORE 1st, FOLLOWED BY SUBSCALES).
+*Unsupportive Reactions (UnSup) (36 items; n=61; alpha=.893). 
+REL VARS=FQ2OCCNES01D, FQ2OCCNES02C, FQ2OCCNES03B, FQ2OCCNES04C, FQ2OCCNES05C, FQ2OCCNES06B, FQ2OCCNES07D, FQ2OCCNES08D, FQ2OCCNES09C, FQ2OCCNES10F, FQ2OCCNES11A, FQ2OCCNES12F, 
+FQ2OCCNES01A, FQ2OCCNES02F, FQ2OCCNES03F, FQ2OCCNES04A, FQ2OCCNES05D, FQ2OCCNES06D, FQ2OCCNES07E, FQ2OCCNES08E, FQ2OCCNES09E, FQ2OCCNES10B, FQ2OCCNES11C, FQ2OCCNES12E, 
+FQ2OCCNES01B, FQ2OCCNES02AR, FQ2OCCNES03A, FQ2OCCNES04D, FQ2OCCNES05E, FQ2OCCNES06C, FQ2OCCNES07CR, FQ2OCCNES08CR, FQ2OCCNES09B, FQ2OCCNES10AR, FQ2OCCNES11B, FQ2OCCNES12D
+/SCALE(All)= ALL.
+*Minimization Reactions (MR) (12 items; n=62; alpha=.835).
+REL VARS=FQ2OCCNES01D, FQ2OCCNES02C, FQ2OCCNES03B, FQ2OCCNES04C, FQ2OCCNES05C, FQ2OCCNES06B, FQ2OCCNES07D, FQ2OCCNES08D, FQ2OCCNES09C, FQ2OCCNES10F, FQ2OCCNES11A, FQ2OCCNES12F
+/SCALE(All)= ALL.
+*Punitive Reactions (PR) (12 items; n=62; alpha=.791).
+REL VARS=FQ2OCCNES01A, FQ2OCCNES02F, FQ2OCCNES03F, FQ2OCCNES04A, FQ2OCCNES05D, FQ2OCCNES06D, FQ2OCCNES07E, FQ2OCCNES08E, FQ2OCCNES09E, FQ2OCCNES10B, FQ2OCCNES11C, FQ2OCCNES12E
+/SCALE(All)= ALL.
+*Distress Reactions (DR) (12 items; n=63; alpha=.724).
+REL VARS=FQ2OCCNES01B, FQ2OCCNES02AR, FQ2OCCNES03A, FQ2OCCNES04D, FQ2OCCNES05E, FQ2OCCNES06C, FQ2OCCNES07CR, FQ2OCCNES08CR, FQ2OCCNES09B, FQ2OCCNES10AR, FQ2OCCNES11B, FQ2OCCNES12D
+/SCALE(All)= ALL.
+
+*Supportive Reactions (Sup) (36 items; n=60; alpha=.914). 
+REL VARS=FQ2OCCNES01E, FQ2OCCNES02E, FQ2OCCNES03E, FQ2OCCNES04B, FQ2OCCNES05F, FQ2OCCNES06E, FQ2OCCNES07F, FQ2OCCNES08A, FQ2OCCNES09A, FQ2OCCNES10C, FQ2OCCNES11F, FQ2OCCNES12B,
+FQ2OCCNES01F, FQ2OCCNES02B, FQ2OCCNES03D, FQ2OCCNES04E, FQ2OCCNES05A, FQ2OCCNES06A, FQ2OCCNES07B, FQ2OCCNES08F, FQ2OCCNES09F, FQ2OCCNES10D, FQ2OCCNES11E, FQ2OCCNES12C,
+FQ2OCCNES01C, FQ2OCCNES02D, FQ2OCCNES03C, FQ2OCCNES04F, FQ2OCCNES05B, FQ2OCCNES06F, FQ2OCCNES07A, FQ2OCCNES08B, FQ2OCCNES09D, FQ2OCCNES10E, FQ2OCCNES11D, FQ2OCCNES12A
+/SCALE(All)= ALL.
+*Expressive Encouragement (EE) (12 items; n=63; alpha=.905).
+REL VARS=FQ2OCCNES01E, FQ2OCCNES02E, FQ2OCCNES03E, FQ2OCCNES04B, FQ2OCCNES05F, FQ2OCCNES06E, FQ2OCCNES07F, FQ2OCCNES08A, FQ2OCCNES09A, FQ2OCCNES10C, FQ2OCCNES11F, FQ2OCCNES12B
+/SCALE(All)= ALL.
+*Emotion-Focused Reactions (EFR) (12 items; n=61; alpha=.756).
+REL VARS=FQ2OCCNES01F, FQ2OCCNES02B, FQ2OCCNES03D, FQ2OCCNES04E, FQ2OCCNES05A, FQ2OCCNES06A, FQ2OCCNES07B, FQ2OCCNES08F, FQ2OCCNES09F, FQ2OCCNES10D, FQ2OCCNES11E, FQ2OCCNES12C
+/SCALE(All)= ALL.
+*Problem-Focused Reactions (PFR) (12 items; n=62; alpha=.750).
+REL VARS=FQ2OCCNES01C, FQ2OCCNES02D, FQ2OCCNES03C, FQ2OCCNES04F, FQ2OCCNES05B, FQ2OCCNES06F, FQ2OCCNES07A, FQ2OCCNES08B, FQ2OCCNES09D, FQ2OCCNES10E, FQ2OCCNES11D, FQ2OCCNES12A
+/SCALE(All)= ALL.
+
+*STEP 6: COUNTING MISSING DATA (JUST SUBSCALES), THEN RECODING TO 0 TO AVOID NEGATIVE EFFECTS ON CONSTRUCTS.
+*Distress Reactions (DR).
+COUNT MISSDR=FQ2OCCNES01B, FQ2OCCNES02AR, FQ2OCCNES03A, FQ2OCCNES04D, FQ2OCCNES05E, FQ2OCCNES06C, FQ2OCCNES07CR, FQ2OCCNES08CR, FQ2OCCNES09B, FQ2OCCNES10AR, FQ2OCCNES11B, FQ2OCCNES12D (-9999).
+*Punitive Reactions (PR).
+COUNT MISSPR=FQ2OCCNES01A, FQ2OCCNES02F, FQ2OCCNES03F, FQ2OCCNES04A, FQ2OCCNES05D, FQ2OCCNES06D, FQ2OCCNES07E, FQ2OCCNES08E, FQ2OCCNES09E, FQ2OCCNES10B, FQ2OCCNES11C, FQ2OCCNES12E (-9999).
+*Expressive Encouragement (EE).
+COUNT MISSEE=FQ2OCCNES01E, FQ2OCCNES02E, FQ2OCCNES03E, FQ2OCCNES04B, FQ2OCCNES05F, FQ2OCCNES06E, FQ2OCCNES07F, FQ2OCCNES08A, FQ2OCCNES09A, FQ2OCCNES10C, FQ2OCCNES11F, FQ2OCCNES12B (-9999).
+*Emotion-Focused Reactions (EFR).
+COUNT MISSEFR=FQ2OCCNES01F, FQ2OCCNES02B, FQ2OCCNES03D, FQ2OCCNES04E, FQ2OCCNES05A, FQ2OCCNES06A, FQ2OCCNES07B, FQ2OCCNES08F, FQ2OCCNES09F, FQ2OCCNES10D, FQ2OCCNES11E, FQ2OCCNES12C (-9999).
+*Problem-Focused Reactions (PFR).
+COUNT MISSPFR=FQ2OCCNES01C, FQ2OCCNES02D, FQ2OCCNES03C, FQ2OCCNES04F, FQ2OCCNES05B, FQ2OCCNES06F, FQ2OCCNES07A, FQ2OCCNES08B, FQ2OCCNES09D, FQ2OCCNES10E, FQ2OCCNES11D, FQ2OCCNES12A (-9999).
+*Minimization Reactions (MR).
+COUNT MISSMR=FQ2OCCNES01D, FQ2OCCNES02C, FQ2OCCNES03B, FQ2OCCNES04C, FQ2OCCNES05C, FQ2OCCNES06B, FQ2OCCNES07D, FQ2OCCNES08D, FQ2OCCNES09C, FQ2OCCNES10F, FQ2OCCNES11A, FQ2OCCNES12F (-9999).
+
+RECODE FQ2OCCNES01A TO FQ2OCCNES12F (-9999=0).
+EXECUTE.
+
+*STEP 7: CREATE TOTAL AND SUBSCALES SCORES  (CHECK THAT REVERSE-SCORED ITEMS INCLUDED).
+*Note each subscale name and calculate missingness allowed.
+*CREATING TOTAL SCORE-Unsupportive Reactions (UnSup)
+*Total Score (36 items) -- USE MISSINGNESS FOR EACH SUBSCALE as a cut-off point.
+COMPUTE FQ2OCCNESUnSup=-9999.
+EXECUTE.
+IF (MISSMR < 3.96 AND MISSPR < 3.96 AND MISSDR < 3.96) FQ2OCCNESUnSup=((FQ2OCCNES01D + FQ2OCCNES02C + FQ2OCCNES03B + FQ2OCCNES04C + FQ2OCCNES05C + FQ2OCCNES06B + FQ2OCCNES07D + FQ2OCCNES08D + FQ2OCCNES09C + FQ2OCCNES10F + FQ2OCCNES11A + FQ2OCCNES12F +
+FQ2OCCNES01A + FQ2OCCNES02F + FQ2OCCNES03F + FQ2OCCNES04A + FQ2OCCNES05D + FQ2OCCNES06D + FQ2OCCNES07E + FQ2OCCNES08E + FQ2OCCNES09E + FQ2OCCNES10B + FQ2OCCNES11C + FQ2OCCNES12E +
+FQ2OCCNES01B + FQ2OCCNES02AR + FQ2OCCNES03A + FQ2OCCNES04D + FQ2OCCNES05E + FQ2OCCNES06C + FQ2OCCNES07CR + FQ2OCCNES08CR + FQ2OCCNES09B + FQ2OCCNES10AR + FQ2OCCNES11B + FQ2OCCNES12D)/(36-MISSMR-MISSPR-MISSDR)).
+EXECUTE.
+*CREATING ALL SUBSCALES (CHECK THAT REVERSE-SCORED ITEMS INCLUDED).
+*Minimization Reactions (MR) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESMR=-9999.
+EXECUTE.
+IF (MISSMR < 3.96) FQ2OCCNESMR=((FQ2OCCNES01D + FQ2OCCNES02C + FQ2OCCNES03B + FQ2OCCNES04C + FQ2OCCNES05C + FQ2OCCNES06B + FQ2OCCNES07D + FQ2OCCNES08D + FQ2OCCNES09C + FQ2OCCNES10F + FQ2OCCNES11A + FQ2OCCNES12F)/(12-MISSMR)).
+EXECUTE.
+*Punitive Reactions (PR) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESPR=-9999.
+EXECUTE.
+IF (MISSPR < 3.96) FQ2OCCNESPR=((FQ2OCCNES01A + FQ2OCCNES02F + FQ2OCCNES03F + FQ2OCCNES04A + FQ2OCCNES05D + FQ2OCCNES06D + FQ2OCCNES07E + FQ2OCCNES08E + FQ2OCCNES09E + FQ2OCCNES10B + FQ2OCCNES11C + FQ2OCCNES12E)/(12-MISSPR)).
+EXECUTE.
+*Distress Reactions (DR) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESDR=-9999.
+EXECUTE.
+IF (MISSDR < 3.96) FQ2OCCNESDR=((FQ2OCCNES01B + FQ2OCCNES02AR + FQ2OCCNES03A + FQ2OCCNES04D + FQ2OCCNES05E + FQ2OCCNES06C + FQ2OCCNES07CR + FQ2OCCNES08CR + FQ2OCCNES09B + FQ2OCCNES10AR + FQ2OCCNES11B + FQ2OCCNES12D)/(12-MISSDR)).
+EXECUTE.
+
+*CREATING TOTAL SCORE-Supportive Reactions (Sup)
+*Total Score (36 items) -- USE MISSINGNESS FOR EACH SUBSCALE as a cut-off point.
+COMPUTE FQ2OCCNESSup=-9999.
+EXECUTE.
+IF (MISSEE < 3.96 AND MISSEFR < 3.96 AND MISSPFR < 3.96) FQ2OCCNESSup=((FQ2OCCNES01E + FQ2OCCNES02E + FQ2OCCNES03E + FQ2OCCNES04B + FQ2OCCNES05F + FQ2OCCNES06E + FQ2OCCNES07F + FQ2OCCNES08A + FQ2OCCNES09A + FQ2OCCNES10C + FQ2OCCNES11F + FQ2OCCNES12B +
+FQ2OCCNES01F + FQ2OCCNES02B + FQ2OCCNES03D + FQ2OCCNES04E + FQ2OCCNES05A + FQ2OCCNES06A + FQ2OCCNES07B + FQ2OCCNES08F + FQ2OCCNES09F + FQ2OCCNES10D + FQ2OCCNES11E + FQ2OCCNES12C +
+FQ2OCCNES01C + FQ2OCCNES02D + FQ2OCCNES03C + FQ2OCCNES04F + FQ2OCCNES05B + FQ2OCCNES06F + FQ2OCCNES07A + FQ2OCCNES08B + FQ2OCCNES09D + FQ2OCCNES10E + FQ2OCCNES11D + FQ2OCCNES12A)/(36-MISSEE-MISSEFR-MISSPFR)).
+EXECUTE.
+*CREATING ALL SUBSCALES (CHECK THAT REVERSE-SCORED ITEMS INCLUDED).
+*Expressive Encouragement (EE) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESEE=-9999.
+EXECUTE.
+IF (MISSEE < 3.96) FQ2OCCNESEE=((FQ2OCCNES01E + FQ2OCCNES02E + FQ2OCCNES03E + FQ2OCCNES04B + FQ2OCCNES05F + FQ2OCCNES06E + FQ2OCCNES07F + FQ2OCCNES08A + FQ2OCCNES09A + FQ2OCCNES10C + FQ2OCCNES11F + FQ2OCCNES12B)/(12-MISSEE)).
+EXECUTE.
+*Emotion-Focused Reactions (EFR) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESEFR=-9999.
+EXECUTE.
+IF (MISSEFR < 3.96) FQ2OCCNESEFR=((FQ2OCCNES01F + FQ2OCCNES02B + FQ2OCCNES03D + FQ2OCCNES04E + FQ2OCCNES05A + FQ2OCCNES06A + FQ2OCCNES07B + FQ2OCCNES08F + FQ2OCCNES09F + FQ2OCCNES10D + FQ2OCCNES11E + FQ2OCCNES12C)/(12-MISSEFR)).
+EXECUTE.
+*Problem-Focused Reactions (PFR) (12 items) -- 66.7% (i.e., if MISS is less than or equal to 3.96) as a cut-off point.
+COMPUTE FQ2OCCNESPFR=-9999.
+EXECUTE.
+IF (MISSPFR < 3.96) FQ2OCCNESPFR=((FQ2OCCNES01C + FQ2OCCNES02D + FQ2OCCNES03C + FQ2OCCNES04F + FQ2OCCNES05B + FQ2OCCNES06F + FQ2OCCNES07A + FQ2OCCNES08B + FQ2OCCNES09D + FQ2OCCNES10E + FQ2OCCNES11D + FQ2OCCNES12A)/(12-MISSPFR)).
+EXECUTE.
+
+*STEP 8: RECODING -9999 VALUES TO MISSING VALUES USING THE STAT VARIABLE & LABELING VALUES AS MISSING.
+**All missingness should be checked and labeled correctly here. 
+**-99 'Missing'                                                                            /* (unknown) */
+**-97 'Missing due to COVID Shutdown'                                         /* (missed due to no in-person visits) */
+**-96 'Child Abuse (perpetrator)'                                                     /* (Child Abuse (perpetrator)'  */
+**-95 'Higher Level of Care Required'                                              /* (Higher Level of Care Required) */
+**-88 'Not scorable'                                                                     /* (noisy data: movement, etc.) */
+**-87 'Suspect data'                                                                     /* (out of range values: medical condition, medication use, invalid self-report packet, etc.) */
+**-77 'Technical problem'                                                             /* (mindware crash, poor audio/visual quality, etc.) */
+**-66 'Participant refusal'                                                              /* (no consent to videotape, left in middle of interaction/interview) */
+**-65 'Participant failed to demonstrate comprehension'                  /* (participant did not comprehend task)
+**-56 'Consent Withdrawn'                                                            /*(consent withdrawn) */
+**-55 'Not able to complete'                                                          /* (PI decision) */
+**-54 'Deemed ineligible'                                                              /* (deemed ineligible)
+**-44 'Question skipped'                                                             /* (correct skipped question: e.g. demographics, etc.) */
+**-43 'Question skipped (participant refused root question)'            /* (participant refused root question: e.g., prefer not answer)*/
+**-41 'Instrument not part of the protocol'                                      /* (instrument added later, not in this version) */
+**-33 'Staff Error'                                                                         /* (question incorrectly skipped by staff, PANAS/EMA not administered, etc.) */
+**-22 'Not applicable (Staff/Clinician)'                                            /* (KSADS, behavior codes) */
+**-21 'Not applicable (Participant)'                                                /* (Questionnaires - participant decided) */
+**-17 'Unable to contact teacher'                                                    /* (Staff unable to contact teacher for TRF) */
+**-16 'Participant search exhausted'                                              /* (Participant search exhausted - PI decision */    
+**-14 'Participant repeated cancellations/delays'                            /* (Participant repeated cancellations/delays */
+**-12 'Pariticipant refused follow-up'                                             /* (Participant refused follow-up) */     
+**-11 'Participant (parent or child) deceased'                                                /* (Participant (parent or child) deceased) */
+**-10 'Prefer not to answer'                                                           /* (Participant selected prefer not to answer) */.
+DO IF MISSING(FD2OSTAT).
+DO REPEAT x = FQ2OCCNESUnSup TO FQ2OCCNESPFR.
+RECODE FD2OSTAT (ELSE=COPY) INTO x.
+END REPEAT.
+END IF.
+EXECUTE.
+*Checking frequenices for constructs to look at missingness. 
+FREQUENCIES VARIABLES=FD2OSTAT FQ2OCCNESUnSup FQ2OCCNESMR FQ2OCCNESPR FQ2OCCNESDR FQ2OCCNESSup FQ2OCCNESEE FQ2OCCNESEFR FQ2OCCNESPFR
+  /ORDER=ANALYSIS.
+*If there IS missingness that was not accounted for in the STAT variable (for example in DERSAC, participants who indicated they did not have an additional caregiver should be coded as -44
+Each construct needs to be coded by ID here. If there IS NO additional missingess not accounted for, delete only this section of syntax and write **CHECKED AND NOT NEEDED.
+
+*At this point, the only remaining missingness should represent when participant did not answer a sufficient number of questions, assuming STAT variable was correctly coded for this measure -- CHECK THIS! 
+*The following syntax will recode this remaining missingness for each new construct.
+IF (FQ2OCCNESUnSup=-9999) FQ2OCCNESUnSup=-43.
+EXECUTE.  
+IF (FQ2OCCNESMR=-9999) FQ2OCCNESMR=-43.
+EXECUTE.  
+IF (FQ2OCCNESPR=-9999) FQ2OCCNESPR=-43.
+EXECUTE.  
+IF (FQ2OCCNESDR=-9999) FQ2OCCNESDR=-43.
+EXECUTE.  
+IF (FQ2OCCNESSup=-9999) FQ2OCCNESSup=-43.
+EXECUTE.  
+IF (FQ2OCCNESEE=-9999) FQ2OCCNESEE=-43.
+EXECUTE.  
+IF (FQ2OCCNESEFR=-9999) FQ2OCCNESEFR=-43.
+EXECUTE.  
+IF (FQ2OCCNESPFR=-9999) FQ2OCCNESPFR=-43.
+EXECUTE.  
+MISSING VALUES
+   FQ2OCCNESUnSup FQ2OCCNESMR FQ2OCCNESPR FQ2OCCNESDR FQ2OCCNESSup FQ2OCCNESEE FQ2OCCNESEFR FQ2OCCNESPFR
+    (LO THRU -1).
+EXECUTE.
+
+*STEP 9: LABELING CONSTRUCTS.
+VARIABLE LABELS
+FQ2OCCNESUnSup 'CCNES Unsupportive Reactions [FQ2OCCNESUnSup]'
+FQ2OCCNESMR 'CCNES Minimization Reactions [FQ2OCCNESMR]'
+FQ2OCCNESPR 'CCNES Punitive Reactions [FQ2OCCNESPR]'
+FQ2OCCNESDR 'CCNES Distress Reactions [FQ2OCCNESDR]'
+FQ2OCCNESSup 'CCNES Supportive Reactions [FQ2OCCNESSup]'
+FQ2OCCNESEE 'CCNES Expressive Encouragement [FQ2OCCNESEE]'
+FQ2OCCNESEFR 'CCNES Emotion-Focused Reactions [FQ2OCCNESEFR]'
+FQ2OCCNESPFR 'CCNES Problem-Focused Reactions [FQ2OCCNESPFR]'.
+EXECUTE.
+
+*STEP 9A: ADD VALUE LABELS.
+*Include ALL missing value labels (SEE STEP 8 FOR FULL LIST). 
+*Be sure to also include value labels for any constructs that need labels (e.g., 0 'No', 1 'Yes'). Summed or averaged scores do NOT need value labels.
+VALUE LABELS
+FQ2OCCNESUnSup TO FQ2OCCNESPFR
+-99 'Missing (-99)'    
+-97 'Missing due to COVID Shutdown (-97)'           
+-96 'Child Abuse (perpetrator) (-96)'                       
+-95 'Higher Level of Care Required (-95)'               
+-88 'Not scorable (-88)'                                         
+-87 'Suspect data (-87)'                                            
+-77 'Technical problem (-77)'                                                         
+-66 'Participant refusal (-66)'                                                           
+-65 'Participant failed to demonstrate comprehension (-65)'            
+-56 'Consent Withdrawn (-56)'                                                      
+-55 'Not able to complete (-55)'                                                         
+-54 'Deemed ineligible (-54)'                                                
+-44 'Question skipped (-44)'                                                            
+-43 'Question skipped (participant refused root question) (-43)'     
+-41 'Instrument not part of the protoco (-41)'                                     
+-33 'Staff Error (-33)'                                                                        
+-22 'Not applicable (Staff/Clinician) (-22)'                  
+-21 'Not applicable (Participant) (-21)'                            
+-17 'Unable to contact teacher (-17)'                                    
+-16 'Participant search exhausted (-16)'                                     
+-14 'Participant repeated cancellations/delays (-14)'                      
+-12 'Pariticipant refused follow-up (-12)'                                        
+-11 'Participant (parent or child) deceased (-11)'                              
+-10 'Prefer not to Answer (-10)'.
+EXECUTE.
+
+*STEP 10: CHECK FREQUENCIES.
+*Checking frequencies of all constructs.
+FREQUENCIES VARIABLES=FD2OSTAT FQ2OCCNESUnSup FQ2OCCNESMR FQ2OCCNESPR FQ2OCCNESDR FQ2OCCNESSup FQ2OCCNESEE FQ2OCCNESEFR FQ2OCCNESPFR
+  /ORDER=ANALYSIS.
+
+*STEP 11: CHECK DESCRIPTIVES.
+*Checking descriptives for all constructs.
+DESCRIPTIVES VARIABLES=FQ2OCCNESUnSup FQ2OCCNESMR FQ2OCCNESPR FQ2OCCNESDR FQ2OCCNESSup FQ2OCCNESEE FQ2OCCNESEFR FQ2OCCNESPFR
+  /STATISTICS=MEAN STDDEV MIN MAX.
+
+*STEP 12: SAVE CLEANED DATA FILE.
+*First, sorting the data file by ID and resaving the final file.
+*Using /KEEP command to keep ONLY ID + RD + the constructs that were created. 
+
+SORT CASES BY ID(A).
+SAVE OUTFILE='/Users/alexisadams-clark/Desktop/DBT Moms data management/FQ2OCCNES_Constructs.sav'
+  /KEEP ID FD2ORD FQ2OCCNESUnSup FQ2OCCNESMR FQ2OCCNESPR FQ2OCCNESDR FQ2OCCNESSup FQ2OCCNESEE FQ2OCCNESEFR FQ2OCCNESPFR
+  /COMPRESSED.
+GET
+  FILE='/Users/alexisadams-clark/Desktop/DBT Moms data management/FQ2OCCNES_Constructs.sav'.
+EXECUTE.
+
+*STEP 13: SAVE OUTPUT FILE.
+*Be sure that you have a 'clean' output file. Re-run syntax once you are sure there are no errors and save with frequencies and descriptives.
+OUTPUT SAVE 
+ OUTFILE='/Users/alexisadams-clark/Desktop/DBT Moms data management/FQ2OCCNES_Constructs.spv'
+LOCK=NO.

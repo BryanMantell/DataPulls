@@ -1,0 +1,343 @@
+---
+title: "Grad Student Project"
+author: "Bryan"
+date: "6/21/2021"
+output: html_document
+---
+
+```{r setup}
+#Import Packages 
+library(RCurl) 
+library(tidyverse)
+library(data.table)
+library(knitr)
+#library(kableExtra)
+library(dplyr)
+library(lmSupport)
+library(stringr)
+
+# Empty Global Environment
+rm(list = ls())
+options(digits=4)
+```
+
+```{r Import, warning=FALSE}
+# I have already renamed variable names in the excel sheet so now we can import
+ID <- read.csv("Raw/CSD01.csv", na.strings=c("","NA"))
+
+# Remove first two rows as they are not needed
+ID = ID[-1,]
+ID = ID[-1,]
+```
+
+```{r DERS, warning=FALSE}
+# Recode text to numbers
+ID <- ID %>% 
+  mutate_at(12:47,
+            list(~recode(., "Almost never (0-10%)" = 1, 
+                        "Sometimes (11-35%)" = 2,
+                        "About half the time (36-65%)" = 3,
+                        "Most of the time (66-90%)" = 4,
+                        "Almost always (91-100%)" = 5)))
+
+# Calculate awareness
+ID <- add_column(ID, DERS_awareness = varScore(ID, Forward = NULL, 
+                                                             Reverse = c("srm_ders_2", "srm_ders_6", "srm_ders_8", 
+                                                                         "srm_ders_10","srm_ders_17", "srm_ders_34"), 
+                                                              Range = c(1,5), MaxMiss = .20), .after = "srm_sdc_72")
+# Calculate clarity
+ID <- add_column(ID, DERS_clarity = varScore(ID, Forward = c("srm_ders_4", "srm_ders_5", "srm_ders_9"),
+                                                           Reverse = c("srm_ders_1", "srm_ders_7"),
+                                                            Range = c(1,5), MaxMiss = .20),.after = "DERS_awareness")
+
+# Calculate goals 
+ID <- add_column(ID, DERS_goals = varScore(ID, Forward = c("srm_ders_13", "srm_ders_18", "srm_ders_26", "srm_ders_33"),
+                                                         Reverse = c("srm_ders_20"), 
+                                                          Range = c(1,5), MaxMiss = .20),.after = "DERS_clarity")
+
+# Calculate impulse 
+ID <- add_column(ID, DERS_impulse = varScore(ID, Forward = c("srm_ders_3", "srm_ders_14", "srm_ders_19", 
+                                                                      "srm_ders_27", "srm_ders_32"),
+                                                           Reverse = c("srm_ders_24"),
+                                                            Range = c(1,5), MaxMiss = .20), .after = "DERS_goals")
+
+# Calculate nonacceptance
+ID <- add_column(ID, DERS_nonacceptance = varScore(ID, Forward = c("srm_ders_11", "srm_ders_12", "srm_ders_21",
+                                                                            "srm_ders_23", "srm_ders_25", "srm_ders_29"),
+                                                                 Reverse = NULL,
+                                                                  Range = c(1,5), MaxMiss = .20), .after = "DERS_impulse")
+# Calculate strategies 
+ID <- add_column(ID, DERS_strategies = varScore(ID, Forward =  c("srm_ders_15", "srm_ders_16", "srm_ders_28", "srm_ders_30", 
+                                                                          "srm_ders_31", "srm_ders_35", "srm_ders_36"),
+                                                              Reverse = c("srm_ders_22"), 
+                                                               Range = c(1,5), MaxMiss = .20), .after = "DERS_nonacceptance")
+
+# Calculate total
+ID <- add_column(ID, DERS_Total = varScore(ID, Forward =  c("srm_ders_3", "srm_ders_4", "srm_ders_5", "srm_ders_9", 
+                                                                     "srm_ders_11", "srm_ders_12", "srm_ders_13", "srm_ders_14", 
+                                                                     "srm_ders_15", "srm_ders_16", "srm_ders_18", "srm_ders_19", 
+                                                                     "srm_ders_21", "srm_ders_23", "srm_ders_25", "srm_ders_26", 
+                                                                     "srm_ders_27", "srm_ders_28", "srm_ders_29", "srm_ders_30", 
+                                                                     "srm_ders_31", "srm_ders_32", "srm_ders_33", "srm_ders_35", 
+                                                                     "srm_ders_36"),
+                                                         Reverse = c("srm_ders_1", "srm_ders_2", "srm_ders_6", "srm_ders_7", 
+                                                                     "srm_ders_8", "srm_ders_10", "srm_ders_17", "srm_ders_20", 
+                                                                     "srm_ders_22", "srm_ders_24", "srm_ders_34"), 
+                                                          Range = c(1,5), MaxMiss = .20), .after = "DERS_strategies")
+```
+
+```{r WCCL, warning=FALSE}
+# Recode text to numbers
+ID <- ID %>% 
+  mutate_at(48:106,
+            funs(recode(., "Never Used" = 0, 
+                        "Rarely Used" = 1,
+                        "Sometimes Used" = 2,
+                        "Regularly Used" = 3)))
+
+# Calculate WCCL SU
+ID <- add_column(ID, WCCL_SU = varScore(ID, Forward = c("srm_wccl_1", "srm_wccl_2", "srm_wccl_4", "srm_wccl_6", "srm_wccl_9", 
+                                                          "srm_wccl_10", "srm_wccl_11", "srm_wccl_13", "srm_wccl_16", "srm_wccl_18", 
+                                                          "srm_wccl_19", "srm_wccl_21", "srm_wccl_22", "srm_wccl_23", "srm_wccl_26", 
+                                                          "srm_wccl_27", "srm_wccl_29", "srm_wccl_31", "srm_wccl_33", "srm_wccl_34",
+                                                          "srm_wccl_35", "srm_wccl_36", "srm_wccl_38", "srm_wccl_39", "srm_wccl_40", 
+                                                          "srm_wccl_42", "srm_wccl_43", "srm_wccl_44", "srm_wccl_47", "srm_wccl_49", 
+                                                          "srm_wccl_50", "srm_wccl_51", "srm_wccl_53", "srm_wccl_54", "srm_wccl_56", 
+                                                          "srm_wccl_57", "srm_wccl_58", "srm_wccl_59"), 
+                                                           MaxMiss = .20),.after = "Q_WCCL_SU")
+
+# Calculate WCCL GSC
+ID <- add_column(ID, WCCL_GSC = varScore(ID, Forward = c("srm_wccl_3", "srm_wccl_5", "srm_wccl_8", "srm_wccl_12", "srm_wccl_14", 
+                                                         "srm_wccl_17", "srm_wccl_20", "srm_wccl_25", "srm_wccl_32", "srm_wccl_37", 
+                                                         "srm_wccl_41", "srm_wccl_45", "srm_wccl_46", "srm_wccl_52", "srm_wccl_55"), 
+                                                          MaxMiss = .20),.after = "Q_WCCL_GSC")
+
+# Calculate WCCL BO
+ID <- add_column(ID, WCCL_BO = varScore(ID, Forward = c("srm_wccl_7", "srm_wccl_15", "srm_wccl_24", "srm_wccl_28", "srm_wccl_30",
+                                                        "srm_wccl_48"), 
+                                                         MaxMiss = .20),.after = "Q_WCCL_BO")
+
+```
+
+```{r CCNES, warning=FALSE}
+# Recode text to numbers
+ID <- ID %>% 
+  mutate_at(186:257,
+            funs(recode(., '1. Very Unlikely' = 1,
+                        '1.             Very Unlikely' = 1,
+                        '1' = 1,
+                        '2' = 2,
+                        '3' = 3,
+                        '4. Medium' = 4,
+                        '4' = 4,
+                        '5' = 5,
+                        '6' = 6,
+                        '7' = 7,
+                        '7. Very Likely' = 7)))
+
+# Calculate CCNES Distress Reactions (DR)
+ID <- add_column(ID, CCNES_DR = varScore(ID, Forward = c("srm_ccnes_2", "srm_ccnes_13",  "srm_ccnes_22", "srm_ccnes_29", 
+                                                         "srm_ccnes_33", "srm_ccnes_50", "srm_ccnes_62", "srm_ccnes_70"), 
+                                              Reverse = c("srm_ccnes_7", "srm_ccnes_39", "srm_ccnes_45", "srm_ccnes_55"),
+                                                          Range = c(1,7), MaxMiss = .20),.after = "Q_CCNES_DR")
+# Calculate CCNES Punitive Reactions (PR)
+ID <- add_column(ID, CCNES_PR = varScore(ID, Forward = c("srm_ccnes_1", "srm_ccnes_12", "srm_ccnes_18", "srm_ccnes_19",
+                                                         "srm_ccnes_28", "srm_ccnes_34", "srm_ccnes_41", "srm_ccnes_47", 
+                                                         "srm_ccnes_53", "srm_ccnes_56", "srm_ccnes_63", "srm_ccnes_71"), 
+                                                          MaxMiss = .20),.after = "Q_CCNES_PR")
+# Calculate CCNES Expressive Encouragement (EE)
+ID <- add_column(ID, CCNES_EE = varScore(ID, Forward = c("srm_ccnes_5", "srm_ccnes_11", "srm_ccnes_17", "srm_ccnes_20", 
+                                                         "srm_ccnes_30", "srm_ccnes_35", "srm_ccnes_42", "srm_ccnes_43", 
+                                                         "srm_ccnes_49", "srm_ccnes_57", "srm_ccnes_66", "srm_ccnes_68"), 
+                                                          MaxMiss = .20),.after = "Q_CCNES_EE")
+# Calculate CCNES Emotion-Focused Reactions (EFR)
+ID <- add_column(ID, CCNES_EFR = varScore(ID, Forward = c("srm_ccnes_6", "srm_ccnes_8", "srm_ccnes_16", "srm_ccnes_23",
+                                                          "srm_ccnes_25", "srm_ccnes_31", "srm_ccnes_38", "srm_ccnes_48", 
+                                                          "srm_ccnes_54", "srm_ccnes_58", "srm_ccnes_65", "srm_ccnes_69"),
+                                                           MaxMiss = .20),.after = "Q_CCNES_EFR")
+# Calculate CCNES Problem-Focused Reactions (PFR)
+ID <- add_column(ID, CCNES_PFR = varScore(ID, Forward = c("srm_ccnes_3", "srm_ccnes_10", "srm_ccnes_15", "srm_ccnes_24",
+                                                          "srm_ccnes_26", "srm_ccnes_36", "srm_ccnes_37", "srm_ccnes_44", 
+                                                          "srm_ccnes_52", "srm_ccnes_59", "srm_ccnes_64", "srm_ccnes_67"), 
+                                                           MaxMiss = .20),.after = "Q_CCNES_PFR")
+# Calculate CCNES Minimization Reactions (MR)
+ID <- add_column(ID, CCNES_MR = varScore(ID, Forward = c("srm_ccnes_4", "srm_ccnes_9", "srm_ccnes_14", "srm_ccnes_21",
+                                                         "srm_ccnes_27", "srm_ccnes_32", "srm_ccnes_40", "srm_ccnes_46", 
+                                                         "srm_ccnes_51",  "srm_ccnes_60","srm_ccnes_61", "srm_ccnes_72"), 
+                                                          MaxMiss = .20),.after = "Q_CCNES_MR")
+# Turn Subscales into means
+ID <- ID %>%
+  mutate(CCNES_DR = CCNES_DR/12) %>%
+  mutate(CCNES_PR = CCNES_PR/12) %>%
+  mutate(CCNES_EE = CCNES_EE/12) %>%
+  mutate(CCNES_EFR = CCNES_EFR/12) %>%
+  mutate(CCNES_PFR = CCNES_PFR/12) %>%
+  mutate(CCNES_MR = CCNES_MR/12)
+  
+```
+
+```{r SDQ, warning=FALSE}
+# Recode text to numbers
+ID <- ID %>% 
+  mutate_at(131:155,
+            funs(recode(., 'Not True' = 0,
+                        'Somewhat True' = 1,
+                        'Certainly True' = 2)))
+
+# Calculate SDQ Emotional problems scale (EP)
+ID <- add_column(ID, SDQ_EP = varScore(ID, Forward = c("srm_sdq_3", "srm_sdq_8", "srm_sdq_13", "srm_sdq_16", "srm_sdq_24"), 
+                                                        MaxMiss = .40),.after = "Q_SDQ_EP")
+# Calculate SDQ Conduct problems Scale
+ID <- add_column(ID, SDQ_CP = varScore(ID, Forward = c("srm_sdq_5", "srm_sdq_12", "srm_sdq_18", "srm_sdq_22"), 
+                                            Reverse = c("srm_sdq_7"),
+                                             Range = c(0,2), MaxMiss = .40),.after = "Q_SDQ_CP")
+# Calculate SDQ Hyperactivity scale
+ID <- add_column(ID, SDQ_Hyp = varScore(ID, Forward = c("srm_sdq_2", "srm_sdq_10", "srm_sdq_15"), 
+                                             Reverse = c("srm_sdq_21", "srm_sdq_25"),
+                                              Range = c(0,2), MaxMiss = .40),.after = "SDQ_CP")
+# Calculate SDQ Peer problems scale
+ID <- add_column(ID, SDQ_PP = varScore(ID, Forward = c("srm_sdq_6", "srm_sdq_19", "srm_sdq_23"), 
+                                             Reverse = c("srm_sdq_11", "srm_sdq_14"),
+                                              Range = c(0,2), MaxMiss = .40),.after = "SDQ_Hyp")
+# Calculate SDQ Prosocial scale
+ID <- add_column(ID, SDQ_PS = varScore(ID, Forward = c("srm_sdq_1", "srm_sdq_4", "srm_sdq_9", "srm_sdq_17", "srm_sdq_20"), 
+                                                        MaxMiss = .40),.after = "SDQ_PP")
+
+# Calculate SDQ Total difficulties score
+ID <- add_column(ID, SDQ_TD = varScore(ID, Forward = c("SDQ_EP", "SDQ_CP", "SDQ_Hyp", "SDQ_PP"), 
+                                                        MaxMiss = .20),.after = "Q_SDQ_TD")
+# Calculate SDQ Externalising score
+ID <- add_column(ID, SDQ_Ext = varScore(ID, Forward = c("SDQ_CP", "SDQ_Hyp"), 
+                                                        MaxMiss = .20),.after = "SDQ_TD")
+
+# Calculate SDQ Internalising score
+ID <- add_column(ID, SDQ_Int = varScore(ID, Forward = c("SDQ_EP", "SDQ_PP"), 
+                                                        MaxMiss = .20),.after = "SDQ_Ext")
+
+```
+
+```{r ERC, warning=FALSE}
+# Recode text to numbers
+ID <- ID %>% 
+  mutate_at(107:130.,
+            funs(recode(., 'Never' = 1,
+                        'Sometimes' = 2,
+                        'Often' = 3,
+                        'Almost Always' = 4)))
+
+# Calculate ERC Lability/Negativity Subscale (LN)
+ID <- add_column(ID, ERC_LN = varScore(ID, Forward = c("srm_erc_2", "srm_erc_6", "srm_erc_8", "srm_erc_10","srm_erc_12","srm_erc_13",
+                                                       "srm_erc_14", "srm_erc_17", "srm_erc_20", "srm_erc_22", "srm_erc_24"), 
+                                            Reverse = c("srm_erc_9","srm_erc_11"),
+                                             Range = c(1,4), MaxMiss = .20),.after = "Q_ERC")
+
+# Calculate ERC Emotion RegulationSubscale (ER)
+ID <- add_column(ID, ERC_ER = varScore(ID, Forward = c("srm_erc_1", "srm_erc_3", "srm_erc_4", "srm_erc_5","srm_erc_7","srm_erc_15",
+                                                       "srm_erc_21", "srm_erc_23"), 
+                                            Reverse = c("srm_erc_16", "srm_erc_18", "srm_erc_19"),
+                                             Range = c(1,4), MaxMiss = .20),.after = "ERC_LN")
+
+# Calculate ERC ER Composite (Comp)
+ID <- add_column(ID, ERC_Comp = varScore(ID, Forward = c("srm_erc_1", "srm_erc_3", "srm_erc_4", "srm_erc_5", "srm_erc_7","srm_erc_9","srm_erc_11",
+                                                        "srm_erc_15", "srm_erc_21", "srm_erc_23"), 
+                                            Reverse = c("srm_erc_2","srm_erc_6" ,"srm_erc_8","srm_erc_10", "srm_erc_12", "srm_erc_13",
+                                                        "srm_erc_14", "srm_erc_16" ,"srm_erc_17" ,"srm_erc_18" ,"srm_erc_19" ,"srm_erc_20",
+                                                        "srm_erc_22", "srm_erc_24"),
+                                             Range = c(1,4), MaxMiss = .20),.after = "Q_ERC")
+
+```
+
+```{r PS, warning=FALSE}
+# Recode text to numbers
+ID[156:185] <- lapply(ID[156:185], function(x) replace(x, grep("1.", x), 1))
+ID[156:185] <- lapply(ID[156:185], function(x) replace(x, grep("7.", x), 7))
+
+# Change Numbers to Numeric values
+ID[156:185] <- sapply(ID[156:185],as.numeric)
+
+# Calculate PS Laxness (Lax)
+ID <- add_column(ID, PS_Lax = varScore(ID, Forward = c("srm_ps_7", "srm_ps_8", "srm_ps_12", "srm_ps_15", "srm_ps_16", "srm_ps_21",
+                                                       "srm_ps_24"), 
+                                            Reverse = c("srm_ps_19","srm_ps_20", "srm_ps_26", "srm_ps_30"),
+                                             Range = c(1,7), MaxMiss = .20),.after = "Q_PS_Lax")
+
+# Calculate PS Overreactivity (OR)
+ID <- add_column(ID, PS_Over = varScore(ID, Forward = c("srm_ps_18", "srm_ps_22", "srm_ps_25", "srm_ps_28"), 
+                                            Reverse = c("srm_ps_3","srm_ps_6", "srm_ps_9", "srm_ps_10", "srm_ps_14", "srm_ps_17"),
+                                             Range = c(1,7), MaxMiss = .20),.after = "Q_PS_Over")
+
+# Calculate PS Verbosity (Verb)
+ID <- add_column(ID, PS_Verb = varScore(ID, Forward = c("srm_ps_4", "srm_ps_7", "srm_ps_11", "srm_ps_29"), 
+                                            Reverse = c("srm_ps_2","srm_ps_9", "srm_ps_23"),
+                                             Range = c(1,7), MaxMiss = .20),.after = "Q_PS_Verb")
+
+# Calculate PS Total (Total)
+ID <- add_column(ID, PS_Total = varScore(ID, Forward = c("srm_ps_1", "srm_ps_4", "srm_ps_5", "srm_ps_7", "srm_ps_8", "srm_ps_11", 
+                                                         "srm_ps_12", "srm_ps_15", "srm_ps_16" , "srm_ps_18", "srm_ps_21", "srm_ps_22",
+                                                         "srm_ps_24", "srm_ps_25", "srm_ps_28", "srm_ps_29"), 
+                                            Reverse = c("srm_ps_2","srm_ps_3", "srm_ps_6", "srm_ps_9", "srm_ps_10", "srm_ps_13", 
+                                                        "srm_ps_14", "srm_ps_17", "srm_ps_19", "srm_ps_20", "srm_ps_23", "srm_ps_26",
+                                                        "srm_ps_27", "srm_ps_30"),
+                                             Range = c(1,7), MaxMiss = .20),.after = "Q_PS")
+
+```
+
+```{r SDC}
+# Calculate SDC DBT Skill use in a non-parenting context (Total skills uses)
+SDC_DBT <- split(ID[258:283], seq(nrow(ID[258:283])))
+SDC_DBT <- str_count(SDC_DBT, c("Mon|Tues|Wed|Thurs|Fri|Sat|Sun"))
+ID$SDC_DBT <- SDC_DBT
+
+# Calculate SDC DBT Skill use in a parenting context  (Total skills uses)
+SDC_DBTPC <- split(ID[284:309], seq(nrow(ID[284:309])))
+SDC_DBTPC <- str_count(SDC_DBTPC, c("Mon|Tues|Wed|Thurs|Fri|Sat|Sun"))
+ID$SDC_DBTPC <- SDC_DBTPC
+
+# Calculate SDC Parenting skills  (Total skills uses)
+SDC_PS <- split(ID[310:329], seq(nrow(ID[310:329])))
+SDC_PS <- str_count(SDC_PS, c("Mon|Tues|Wed|Thurs|Fri|Sat|Sun"))
+ID$SDC_PS <- SDC_PS
+
+# Turn Total skills uses into weekly average by dividing by 7
+ID <- ID %>%
+  mutate(SDC_DBT = SDC_DBT/7) %>%
+  mutate(SDC_DBTPC = SDC_DBTPC/7) %>%
+  mutate(SDC_PS = SDC_PS/7) 
+
+# Calculate ID's over all skill usage per scale
+SDC_DBT_AVE <- mean(ID$SDC_DBT)
+SDC_DBTPC_AVE <- mean(ID$SDC_DBTPC)
+SDC_PS_AVE <- mean(ID$SDC_PS)
+
+# Remove unneeded vectors
+rm(SDC_DBT, SDC_DBTPC, SDC_PS)
+
+```
+
+```{r Format and export}
+# Create Data frame to compare Qualtrics vs R calculations (Unneeded)
+ID_Compare <- select(ID, Date = Q26, Q_DERS_Total, DERS_Total, Q_WCCL_SU, WCCL_SU, Q_WCCL_GSC, WCCL_GSC, Q_WCCL_BO, WCCL_BO, 
+                     Q_CCNES_DR, CCNES_DR, Q_CCNES_PR, CCNES_PR, Q_CCNES_EE, CCNES_EE, Q_CCNES_EFR, CCNES_EFR, Q_CCNES_PFR, 
+                     CCNES_PFR, Q_CCNES_MR, CCNES_MR, Q_SDQ_EP, SDQ_EP, Q_SDQ_CP, SDQ_CP, Q_SDQ_TD, SDQ_TD, Q_ERC, ERC_Comp,
+                     Q_PS_Lax, PS_Lax, Q_PS_Over, PS_Over, Q_PS_Verb, PS_Verb, Q_PS, PS_Total)
+
+# Create Final Data frame to that holds everything you need
+ID_Final <- select(ID, Date = Q26, DERS_awareness, DERS_clarity, DERS_goals, DERS_impulse, DERS_nonacceptance, DERS_strategies,
+                   DERS_Total, WCCL_SU, WCCL_GSC, WCCL_BO, CCNES_DR, CCNES_PR, CCNES_EE, CCNES_EFR, CCNES_PFR, CCNES_MR,
+                   SDQ_EP, SDQ_CP, SDQ_Hyp, SDQ_PP, SDQ_PS, SDQ_TD, SDQ_Ext, SDQ_Int, ERC_LN, ERC_ER, ERC_Comp, PS_Lax,
+                   PS_Over, PS_Verb, PS_Total, SDC_DBT, SDC_DBTPC, SDC_PS, SDC_DBT, SDC_DBTPC, SDC_PS)
+
+# Write out the CSV files
+write.csv(ID_Compare, "Export/CSD01_Compare.csv")
+write.csv(ID_Final, "Export/CSD01_Final.csv")
+
+```
+
+
+
+
+
+
+
+
+

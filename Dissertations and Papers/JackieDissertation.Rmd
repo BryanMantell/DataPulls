@@ -1,0 +1,100 @@
+---
+title: "Jackie Dissertation"
+author: "Bryan"
+date: "4/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Load Packages 
+library(RCurl) 
+library(tidyverse)
+library(data.table)
+library(knitr)
+library(kableExtra)
+library(lmSupport)
+library(dplyr)
+library(plyr)
+library(eeptools)
+
+```
+
+```{r Demo}
+# Import UO and UPMC Demographics raw files
+rm(list = ls())
+
+# Get Demo with MasterList
+source("DemoProcessing.R")
+
+ChildGender <- read.csv("raw/ChildGender.csv")
+
+Bothsite_Demo <- merge(Bothsite_Demo, ChildGender, by = "FamID", all.x = TRUE)
+
+rm(list=ls()[! ls() %in% c("Bothsite_Demo")])
+```
+
+```{r LegoTask}
+LegoAVGs_T1 <- read.csv("raw/LegoAVGs_T1.csv")
+
+Final <- merge(Bothsite_Demo, LegoAVGs_T1, by = "FamID", all.x = TRUE)
+
+rm(list=ls()[! ls() %in% c("Final")])
+```
+
+```{r Hair Cortisol Questionnaire}
+HairSurvey <- read.csv("raw/HairSurvey.csv")
+CorStatus <- read.csv("raw/UO_T1_Cortisol.csv")
+
+HairSurvey <- select(HairSurvey, FamID, TimePoint, HairCor01,HairCor02,HairCor03,HairCor04,HairCor05,HairCor06,HairCor07,HairCor08,HairCor09,
+                     HairCor09_txt,HairCor10,HairCor10_txt,HairCor11,HairCor12,HairCor13)
+
+HairSurvey <- filter(HairSurvey, grepl("1", TimePoint))
+
+Final <- merge(Final, HairSurvey, by = "FamID", all.x = TRUE)
+
+Final <- merge(Final, CorStatus, by = "FamID", all.x = TRUE)
+
+rm(list=ls()[! ls() %in% c("Final")])
+
+
+
+```
+
+```{r Receipt of Public Assistance}
+UO_SERV <- read.csv("raw/UO_SERV.csv")
+
+UO_SERV <- select(UO_SERV, FamID, SERV25)
+
+Final <- merge(Final, UO_SERV, by = "FamID", all.x = TRUE)
+
+rm(list=ls()[! ls() %in% c("Final")])
+```
+
+```{r SIDP}
+# Import SIDP
+Bothsite_SIDP <- read.csv("raw/Bothsite_SIDP.csv")
+
+# Select BPD items from SIDP
+Bothsite_SIDP <- select(Bothsite_SIDP, FamID, contains("brd"))
+
+# Create Num of endorsed items
+Bothsite_SIDP$SIDP_BPD_endorsed <- rowSums(Bothsite_SIDP[-1] >= "1")
+
+# Crate sum of BPD items
+Bothsite_SIDP <- Bothsite_SIDP %>%
+  add_column(SIDP_BPD_TOT = rowSums(Bothsite_SIDP[, c("brd83a1", "brd83a2", "brd83a3", "brd83a4", "brd83a5","brd83a6", "brd83a7", "brd83a8", "brd83a9"
+                                                    )]),.after = "brd83a9")
+
+# Merge SIDP with Data
+Final <- merge(Final, Bothsite_SIDP, by = "FamID", all.x = TRUE)
+
+# Clean Enviorment
+rm(list=ls()[! ls() %in% c("Final")])
+```
+
+```{r Write}
+write.csv(Final, "Data/ObrienDissertation.csv")
+
+```
+
+
